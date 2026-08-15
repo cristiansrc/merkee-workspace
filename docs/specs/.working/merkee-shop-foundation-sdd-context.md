@@ -1,0 +1,82 @@
+# SDD Shared Context — merkee-shop-foundation
+
+## Current status
+`planning`. Decisiones aprobadas incorporadas el 2026-08-15: IVA 19% con HALF_UP al peso COP (`floor((items_subtotal_cop * 19 + 50) / 100)`) aplicado una sola vez, y ajuste administrativo de stock separado de la edición de producto. El 2026-08-15 el Spec Remediator incorporó documentalmente los hallazgos C1-C4 y O1-O5 del dictamen del Solution Architect (ownership/dependencias modulares, optimistic locking de `version`, firma de webhook sobre raw body, hosting S3+CloudFront/OAC, bootstrap no-op y rotación de secreto, job de reconciliación en `payments`). La consulta formal al Solution Architect quedó resuelta con veredicto final (`ready-with-final-verdict`). No hay task board. El handoff sigue bloqueado por revisión de Spec Validator y aprobación humana obligatoria.
+
+## Canonical artifacts
+* `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/master_spec.md`
+* `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/api/openapi.yaml`
+* `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/prisma-migration-contract.md`
+* `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/architecture-decisions.md`
+* `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/requirements/merkee-shop-foundation-requirements-brief.md`
+
+## Artifact evidence
+| Ruta absoluta | Campo, endpoint, columna o flujo verificado | Resultado observado | Estado |
+|---|---|---|---|
+| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/master_spec.md` | AC-04/08; fórmula IVA; `product_stock_adjustments`; invariantes de stock; §3.3 ownership/dependencias; §4.1 optimistic locking | IVA exacto HALF_UP y total fueron fijados; edición general excluye stock; ajuste explícito conserva `stock_on_hand >= stock_reserved`, no muta `stock_reserved` y deja auditoría mínima. Se documentaron C1/C2/C3/O4 (ownership y grafo de dependencias sin ciclos) y C4/O5 (optimistic locking de `version`), O1 (firma raw body), O2 (hosting S3+CloudFront/OAC), O3 (bootstrap no-op y rotación de secreto). §4.1 y §10 usan exclusivamente `If-Match` como mecanismo canónico; se eliminó la alternativa `expected_version`. | pending |
+| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/api/openapi.yaml` | `POST /v1/admin/products/{productId}/stock-adjustments`; `StockAdjustmentRequest/Response`; `ProductUpdateRequest`; checkout; `If-Match`; `version` | Endpoint admin con JWT, `Idempotency-Key`, delta no cero, razón, 201/400/401/403/404/409 y observabilidad; `ProductUpdateRequest` no contiene campos de stock; IVA HALF_UP reemplaza el bloqueo histórico. Se añadió optimistic locking: `version` en respuestas de categoría/producto/banner, parámetro `If-Match` en los PATCH y `409` por desajuste; webhooks documentan firma sobre raw body antes de persistir. Se añadió `401` a todas las operaciones admin/media protegidas (además de `403`) y se corrigió la indentación YAML de `responses` en `/auth/password-resets` y `/banners`. Parseo/lint no ejecutado por instrucción de no usar scripts. | pending |
+| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/prisma-migration-contract.md` | 004 IVA; 005 `product_stock_adjustments`; prueba de concurrencia/idempotencia; 002 `version` | IVA/total no nulos; nueva migración futura mínima con FKs, checks, índices y auditoría inmutable; no habilita escritura de `stock_reserved`. Se documentó `version NOT NULL DEFAULT 1` como optimistic locking y su exclusión del ajuste de stock; consistencia 7 usa exclusivamente `If-Match`. | pending |
+| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/architecture-decisions.md` | ADR-009, ADR-011, ADR-012, ADR-013; ADR-005/006/010 actualizados | Fórmula tributaria y límite de ajuste de stock/auditoría documentados; ADR-012 (optimistic locking) y ADR-013 (ownership/dependencias) añadidos; ADR-005 (firma raw body + job reconciliación), ADR-006 (hosting S3+CloudFront/OAC) y ADR-010 (bootstrap no-op + rotación) actualizados; consulta formal al Solution Architect resuelta con veredicto final (`ready-with-final-verdict`); ADR-012 usa exclusivamente `If-Match`. | pending |
+| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/requirements/merkee-shop-foundation-requirements-brief.md` | Decisiones canónicas posteriores; carrito/reservas; IVA; ajuste de stock; historial superseded | Brief sincronizado con las decisiones consolidadas y conserva las afirmaciones previas como `superseded` para trazabilidad. La afirmación histórica "carrito se pierde al cerrar sesión" quedó marcada `superseded` (logout libera solo reservas `ACTIVE`; los holds `CHECKOUT_PENDING` sobreviven). Optimistic locking usa exclusivamente `If-Match`. | pending |
+
+> **Nota Graphify:** Graphify no está activo ni configurado en este repositorio, por lo que no aplica como artefacto canónico obligatorio y no se genera ningún reporte ni consulta de grafo.
+
+## Spec Validator Approval
+verdict: pending
+reviewed_at: none
+validator_agent: spec-validator
+artifact_set_reviewed: none
+summary: Cambios materiales de contrato, modelo de datos y cálculo tributario requieren revisión nueva.
+invalidated_by_changes_since: Fórmula IVA HALF_UP, endpoint/tablas de ajuste auditado de stock y sincronización del requirements brief incorporados el 2026-08-15.
+
+## Decisions locked
+Carrito de servidor para invitado y cliente; ambos reservan stock al agregar. Sesión guest opaca se promueve al autenticar; toda acción válida del usuario reinicia sesión, carrito y reservas `ACTIVE` a 10 min. Logout/vencimiento libera solo reservas `ACTIVE`. Reserva por ítem y `products.stock_reserved` se actualizan atómicamente con lock ordenado y reaper cada minuto. Checkout convierte las reservas en `CHECKOUT_PENDING` sin expiración por inactividad hasta finalización del pago/reconciliación. Un `APPROVED` sin hold consumible no descuenta stock e inicia reembolso automático único por pago. IVA=19%, `iva_cop = floor((items_subtotal_cop * 19 + 50) / 100)` una vez sobre `items_subtotal_cop`, entrega=5000 y `total_cop = items_subtotal_cop + 5000 + iva_cop`; precios excluyen IVA. El ajuste manual usa solo `POST /v1/admin/products/{productId}/stock-adjustments`, requiere admin, clave idempotente, delta no cero y razón, no muta `stock_reserved`, no permite `stock_on_hand < stock_reserved` y registra auditoría inmutable mínima. Wompi por defecto y Mercado Pago alterno usan Strategy. Admin inicial `cristiansrc@gmail.com` se bootstrappea idempotentemente desde secreto externo, obliga cambio inicial y no aparece en seed, OpenAPI, ejemplos ni logs.
+
+## Validator findings
+Pendiente. Debe revisar la coherencia entre fórmula IVA, campos no nulos de orden y OpenAPI; la transacción/idempotencia del ajuste de stock y su restricción frente a reservas activas; y que `ProductUpdateRequest` no reintroduzca mutación de stock. También debe revisar el flujo de `CHECKOUT_PENDING`, transición pago/refund, atomicidad contador-reserva y propiedad modular de `cart-reservation`. Riesgo de seguridad: no exponer contraseña/secretos del admin ni credenciales del PDF.
+
+## Resolved findings
+La contradicción histórica de regla de redondeo pendiente queda sustituida por IVA 19% HALF_UP al peso COP aplicado una vez. El hold máximo de checkout de 10 min queda sustituido por hold hasta terminal de pago/reconciliación. La aprobación tardía/manual review queda sustituida por reembolso automático idempotente sin descuento de stock. `base_fee_cop` queda eliminado y se reemplaza por `delivery_fee_cop=5000` más IVA separado. El carrito local persistido queda sustituido por vista Redux derivada del carrito servidor; ningún token o ítem se persiste en `localStorage`. La edición general de producto no puede mutar inventario; se añade el ajuste explícito con auditoría mínima y sin escritura directa de `stock_reserved`.
+
+## Remediation progress (Spec Remediator, 2026-08-15)
+Hallazgos del dictamen del Solution Architect remediados documentalmente (estado conservado en `planning/pending`):
+- **C1** (admin-query solo lectura cross-cutting de órdenes; escrituras admin a `catalog`/`media`): documentado en Master Spec §3.3 y ADR-013.
+- **C2** (grafo dirigido de dependencias modulares sin ciclos): documentado en Master Spec §3.3 y ADR-013.
+- **C3** (ownership de `stock_on_hand`/`stock_reserved` por módulo y operación): documentado en Master Spec §3.3 y ADR-013.
+- **C4/O5** (version como optimistic locking; `If-Match` canónico; `409`; excluido del ajuste de stock): documentado en Master Spec §4.1 y §10, OpenAPI (parámetro `If-Match`, `version` en respuestas, `409`), contrato Prisma (002 y consistencia 7) y ADR-012.
+- **O1** (firma sobre raw body antes de persistir `payment_webhook_events`): Master Spec §7, OpenAPI webhooks y ADR-005.
+- **O2** (hosting SPAs S3 privado + CloudFront/OAC): Master Spec §3.2 y ADR-006.
+- **O3** (bootstrap admin no-op con `must_change_password=false`; rotación de secreto sin exponer credenciales): Master Spec §6 y ADR-010.
+- **O4** (job de reconciliación como scheduled driving adapter de `payments`): Master Spec §3.3/§7 y ADR-005/013.
+Archivos modificados: `docs/specs/master_spec.md`, `docs/api/openapi.yaml`, `docs/specs/prisma-migration-contract.md`, `docs/specs/architecture-decisions.md`, `docs/specs/requirements/merkee-shop-foundation-requirements-brief.md`, y este shared context. No se ejecutó Git, código ni scripts. Pendiente revalidación del `spec-validator`.
+
+Segunda ronda de remediación (Spec Remediator, 2026-08-15), hallazgos del Spec Validator:
+- **F1** (evidencia Solution Architect): consulta formal marcada como resuelta con veredicto final (`ready-with-final-verdict`) en ADR y shared context; Lifecycle permanece en `planning` y Spec Validator Approval en `pending`; no se declaró readiness.
+- **F2** (indentación YAML): corregida la indentación inconsistente de `responses` en `/auth/password-resets` y `/banners` de `openapi.yaml`; semántica conservada.
+- **F3** (ambigüedad optimistic locking): `If-Match` queda como mecanismo canónico exclusivo; se eliminó la alternativa `expected_version` de Master Spec §4.1/§10, contrato Prisma (consistencia 7), ADR-012 y requirements brief.
+- **F4** (401/403 en operaciones admin): añadida respuesta `401 Unauthorized` (además de `403`) a todas las operaciones administrativas/protegidas de `openapi.yaml` (categorías, productos, banners, órdenes admin y media upload), consistente con el componente estándar.
+- **F5** (afirmación histórica de carrito): la afirmación "carrito se pierde al cerrar sesión" del historial del requirements brief quedó marcada `superseded` (logout libera solo reservas `ACTIVE`; los holds `CHECKOUT_PENDING` sobreviven); el historial se conserva.
+
+Tercera ronda de remediación (Spec Remediator, 2026-08-15), hallazgos del Spec Validator:
+- **F6** (consulta Solution Architect en Master Spec): la frase "Consulta formal a Solution Architect pendiente" quedó marcada como histórico superseded y actualizada a consulta resuelta con veredicto final `ready-with-final-verdict`, conservando trazabilidad; el incremento permanece en `planning`.
+- **F7** (claims de consulta pendiente en requirements brief): las afirmaciones de las líneas 9 y 420 que indicaban falta de consulta/dictamen formal de Solution Architect quedaron marcadas como histórico superseded (resuelta con `ready-with-final-verdict`); el historial se conserva y se evita contradicción vigente.
+- **F8** (403 en endpoints de rol `cliente`): añadida respuesta `403 Forbidden` a `POST /checkouts` y `GET /orders` en `openapi.yaml`, porque requieren rol `cliente`.
+- **F9** (Graphify): retirado `graphify-out/GRAPH_REPORT.md` de la evidencia de artefactos canónicos; queda solo una nota de que Graphify no está activo y no aplica. No se generó Graphify.
+Archivos modificados: `docs/specs/master_spec.md`, `docs/specs/requirements/merkee-shop-foundation-requirements-brief.md`, `docs/api/openapi.yaml` y este shared context. Lifecycle permanece en `planning` y Spec Validator Approval en `pending`; no se declaró readiness. No se ejecutó Git, código ni scripts.
+
+Cuarta ronda de remediación (Spec Remediator, 2026-08-15), hallazgos del Spec Validator:
+- **F10** (S3 vía URL pública en requirements brief): la afirmación "URL pública" de la entidad `Imagen` (línea 222) y de CA-23 (línea 331) quedó marcada como histórico superseded y alineada con S3 privado servido mediante CloudFront + OAC (lectura vía URL prefirmada de corta duración, sin acceso público al bucket), consistente con Master Spec §3.2 y ADR-006. El historial se conserva.
+- **F11** (cardinalidad producto-categoría): la afirmación "cardinalidad 1:1" de la decisión 5 del handoff (línea 391) quedó marcada como histórico superseded y corregida a cardinalidad inequívoca 1:N desde categoría hacia productos (cada producto pertenece a exactamente una categoría; una categoría puede tener múltiples productos). La Master Spec ya era correcta (`categories.productos 1:N` y `products.category_id NOT NULL` con "una categoría"), por lo que no requirió cambio.
+- **F12** (`CartItemResponse.reservation_expires_at` nullable): en `openapi.yaml` el campo `reservation_expires_at` de `CartItemResponse` pasó a `type: [string, 'null']` y se alineó su descripción con `CartResponse` y la Master Spec (null cuando la reserva es un hold `CHECKOUT_PENDING`, que no expira por inactividad). Se mantiene en `required` porque el campo puede estar presente con valor null.
+Archivos modificados: `docs/specs/requirements/merkee-shop-foundation-requirements-brief.md`, `docs/api/openapi.yaml` y este shared context. Lifecycle permanece en `planning` y Spec Validator Approval en `pending`; no se declaró readiness. No se ejecutó Git, código ni scripts.
+
+## Open questions
+1. Pendientes no bloqueantes de producto: campos finales perfil/dirección, retención Ley 1581 —incluida la de `product_stock_adjustments`—, emails adicionales, provisión/admin puede comprar, paginación y política definitiva de eliminación.
+2. Resuelta: el Solution Architect emitió veredicto final (`ready-with-final-verdict`) sobre ADR-002/005/007/008/009/010/011/012/013. El incremento permanece en `planning` y la aprobación de Spec Validator en `pending` hasta nueva validación.
+3. Debe verificarse el parseo/lint de OpenAPI; no se ejecutó por instrucción de no usar scripts.
+
+## Stale terms guard
+Prohibidos: `Strapi`, `Next.js runtime`, `UserCart` persistido solo en navegador, `base_fee_cop`, `TAX_RATE_NOT_CONFIGURED`, `TAX_ROUNDING_RULE_NOT_CONFIGURED`, IVA no-19%, redondeo COP distinto de `floor((items_subtotal_cop * 19 + 50) / 100)`, hold de checkout de 10 min, revisión manual en vez de reembolso automático, stock reservado solo para autenticados, descuento de stock sin reserva consumible, invitado sin reserva, roles distintos de `admin`/`cliente`, contraseña/hash/secret del admin en seed/OpenAPI/docs públicas/logs, almacenar tarjeta/PAN/CVV, mutación administrativa de órdenes, mutar `stock_reserved` directamente o mediante edición/ajuste administrativo de producto.
+
+## Next action
+Ejecutar parseo/lint OpenAPI sin modificar el contrato; solicitar revalidación del Spec Validator sobre los hallazgos remediados (optimistic locking de `version` vía `If-Match`, ownership/dependencias modulares, firma raw body, hosting S3+CloudFront/OAC, bootstrap no-op, job de reconciliación, respuestas 401/403 en operaciones admin y de rol `cliente`, indentación YAML, sincronización del dictamen del Solution Architect como resuelto con `ready-with-final-verdict`, y retiro de Graphify como artefacto canónico). Tras veredicto exacto `ready`, cambiar a `awaiting-human-plan-approval` y requerir exactamente `## Human Plan Approval: approved_by_user` antes de cualquier handoff.

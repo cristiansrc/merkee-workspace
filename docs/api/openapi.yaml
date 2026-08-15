@@ -1,0 +1,392 @@
+openapi: 3.1.0
+info:
+  title: merkee.shop API
+  version: 0.1.0-planning
+  description: Canonical API Design First contract. All money values are integer COP. No endpoint accepts raw card data. Every valid user action associated with a session renews its 10-minute inactivity timeout and ACTIVE reservations; provider webhooks do not. CHECKOUT_PENDING holds remain until payment or reconciliation reaches a terminal state. Category/product/banner updates use optimistic locking via If-Match (mismatch returns 409); stock-adjustments are excluded from it.
+servers:
+  - url: https://api.merkee.shop/v1
+security: [{ bearerAuth: [] }]
+paths:
+  /auth/register:
+    post:
+      operationId: registerCustomer
+      tags: [Auth]
+      security: []
+      summary: Register a cliente and start a session.
+      x-idempotency: N/A; duplicate email returns conflict.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' } } } }
+      responses: { '201': { description: Session created, headers: { Location: { schema: { type: string } }, Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Auth]
+      security: []
+      summary: Authenticate with email and password; rotates/sets refresh cookie and promotes a valid guest cart session, preserving its active reservations.
+      x-idempotency: N/A; each success creates a new session.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } } }
+      responses: { '200': { description: Session, headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /auth/refresh:
+    post:
+      operationId: refreshSession
+      tags: [Auth]
+      security: []
+      summary: Rotate valid HttpOnly refresh cookie and return new access token.
+      x-idempotency: N/A; rotated token cannot be replayed.
+      responses: { '200': { description: Refreshed session, headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [Auth]
+      summary: Revoke current session and release every active reservation of its cart. SPA clears only its derived Redux cart view.
+      x-idempotency: Session revoke and release transitions are idempotent.
+      responses: { '204': { description: Revoked and reservations released }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /auth/password-reset-requests:
+    post:
+      operationId: requestPasswordReset
+      tags: [Auth]
+      security: []
+      summary: Request reset email without disclosing email existence.
+      x-idempotency: one active reset token per user; repeated requests invalidate predecessor.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PasswordResetRequest' } } } }
+      responses: { '202': { description: Accepted regardless of account existence }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /auth/password-resets:
+    post:
+      operationId: resetPassword
+      tags: [Auth]
+      security: []
+      summary: Consume one-time reset token and revoke all sessions.
+      x-idempotency: token consumption is atomic; replay returns 400.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PasswordResetConfirmRequest' } } } }
+      responses: { '204': { description: Password changed }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /auth/initial-password-change:
+    post:
+      operationId: changeInitialPassword
+      tags: [Auth]
+      summary: Change bootstrap password when `must_change_password` is true.
+      description: 'Requires an authenticated bootstrap admin. Side effects: atomically changes password hash, clears `must_change_password`, revokes other sessions and preserves only the current rotated session. No credential is returned or logged. Any protected operation except profile read, refresh and logout returns `403 INITIAL_PASSWORD_CHANGE_REQUIRED` until this succeeds.'
+      x-idempotency: '`Idempotency-Key` required; same principal, key and canonical request body returns 204; divergent replay returns 409.'
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/InitialPasswordChangeRequest' } } } }
+      responses: { '204': { description: Initial password changed }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /me:
+    get:
+      operationId: getMyProfile
+      tags: [Profile]
+      summary: Get current profile.
+      x-idempotency: N/A read-only.
+      responses: { '200': { description: Profile, content: { application/json: { schema: { $ref: '#/components/schemas/UserResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    patch:
+      operationId: updateMyProfile
+      tags: [Profile]
+      summary: Update permitted profile fields; exact optional fields are pending business confirmation.
+      x-idempotency: '`Idempotency-Key` required; replay returns original response.'
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateProfileRequest' } } } }
+      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/UserResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [Catalog]
+      security: []
+      summary: List active categories for storefront.
+      x-idempotency: N/A read-only.
+      responses: { '200': { description: Categories, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryResponse' } } } } } , '500': { $ref: '#/components/responses/InternalServerError' } , '429': { $ref: '#/components/responses/RateLimited' } }
+  /products:
+    get:
+      operationId: listProducts
+      tags: [Catalog]
+      security: []
+      summary: Search/list active products.
+      x-idempotency: N/A read-only.
+      parameters: [{ $ref: '#/components/parameters/CategoryId' }, { $ref: '#/components/parameters/Search' }, { $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }]
+      responses: { '200': { description: Products, content: { application/json: { schema: { $ref: '#/components/schemas/PagedProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      tags: [Catalog]
+      security: []
+      summary: Get a product and current available stock.
+      x-idempotency: N/A read-only.
+      parameters: [{ $ref: '#/components/parameters/ProductId' }]
+      responses: { '200': { description: Product, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /banners:
+    get:
+      operationId: listActiveBanners
+      tags: [Catalog]
+      security: []
+      summary: List active home banners by display order.
+      x-idempotency: N/A read-only.
+      responses: { '200': { description: Banners, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BannerResponse' } } } } } , '500': { $ref: '#/components/responses/InternalServerError' } , '429': { $ref: '#/components/responses/RateLimited' } }
+  /cart:
+    get:
+      operationId: getCart
+      tags: [Cart]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
+      summary: Get the server cart and active reservation expiry for the current authenticated or guest session.
+      description: 'Side effect: a valid cart/session access renews its inactivity timeout to 10 minutes. No cart, cart item, or reservation is persisted in browser storage.'
+      x-idempotency: N/A read; valid access may renew the same session expiry only.
+      responses: { '200': { description: Cart, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /cart/items:
+    post:
+      operationId: addCartItem
+      tags: [Cart]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }, {}]
+      summary: Add product quantity to current cart and reserve stock.
+      description: 'Side effects: creates a guest session/cookie if absent; transaction atomically increments item reservation and products.stock_reserved. Reservation expires after 10 minutes of inactivity.'
+      x-idempotency: '`Idempotency-Key` required; same session, key and canonical request body return the original CartResponse. Reusing a key with a different body returns 409.'
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CartItemMutationRequest' } } } }
+      responses: { '201': { description: Reserved cart item, headers: { Set-Cookie: { schema: { type: string }, description: Guest cart-session cookie only when a guest session is created. } }, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /cart/items/{productId}:
+    put:
+      operationId: setCartItemQuantity
+      tags: [Cart]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
+      summary: Set reserved quantity for an existing product; zero is not valid and must use DELETE.
+      description: 'Side effects: atomically adjusts reservation delta and `stock_reserved`; a decrease releases the delta. Successful access renews the 10 minute expiry.'
+      x-idempotency: '`Idempotency-Key` required; same session, key and canonical request body return the original CartResponse; divergent replay returns 409.'
+      parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SetCartItemQuantityRequest' } } } }
+      responses: { '200': { description: Updated cart, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    delete:
+      operationId: removeCartItem
+      tags: [Cart]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
+      summary: Remove cart item and release its reservation.
+      description: 'Side effect: marks the reservation released and decrements `stock_reserved` atomically. A repeated request with the same idempotency key succeeds without a second decrement.'
+      x-idempotency: '`Idempotency-Key` required; same session/key returns 204. Divergent replay returns 409.'
+      parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      responses: { '204': { description: Reservation released }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /checkouts:
+    post:
+      operationId: createCheckout
+      tags: [Checkout]
+      summary: Consume the current server cart holds, create pending order/payment and initialize provider checkout.
+      description: 'Side effects: locks active cart reservations, creates order/payment and may call provider. Prices, delivery fee (5000 COP), `iva_cop = floor((items_subtotal_cop * 19 + 50) / 100)` (19%, HALF_UP to COP peso) and total are server-calculated snapshots; IVA is applied exactly once to items subtotal. Requires customer role. Converted CHECKOUT_PENDING holds persist until payment/reconciliation reaches a terminal status; they do not expire through the 10-minute inactivity timer. Returns 422 and creates no payment for an expired reservation or invalid checkout state.'
+      x-idempotency: '`Idempotency-Key` required per payment attempt; same key/body returns same pending checkout.'
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateCheckoutRequest' } } } }
+      responses: { '201': { description: Pending checkout, headers: { Location: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/CheckoutResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' }, '422': { $ref: '#/components/responses/Unprocessable' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /orders:
+    get:
+      operationId: listMyOrders
+      tags: [Orders]
+      summary: List orders of current customer only.
+      x-idempotency: N/A read-only.
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }]
+      responses: { '200': { description: Orders, content: { application/json: { schema: { $ref: '#/components/schemas/PagedOrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /orders/{orderId}:
+    get:
+      operationId: getMyOrder
+      tags: [Orders]
+      summary: Get own order; admins use admin route.
+      x-idempotency: N/A read-only.
+      parameters: [{ $ref: '#/components/parameters/OrderId' }]
+      responses: { '200': { description: Order, content: { application/json: { schema: { $ref: '#/components/schemas/OrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/categories:
+    get:
+      operationId: adminListCategories
+      tags: [Admin]
+      summary: admin list including inactive.
+      responses: { '200': { description: Categories, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryResponse' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    post:
+      operationId: adminCreateCategory
+      tags: [Admin]
+      summary: admin create category referring to validated S3 media key.
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWriteRequest' } } } }
+      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/categories/{categoryId}:
+    patch:
+      operationId: adminUpdateCategory
+      tags: [Admin]
+      summary: Update category using optimistic locking; If-Match must match current version or 409 is returned.
+      parameters: [{ $ref: '#/components/parameters/CategoryPathId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWriteRequest' } } } }
+      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    delete:
+      operationId: adminDeleteCategory
+      tags: [Admin]
+      summary: Soft-delete only when no active product belongs to category.
+      parameters: [{ $ref: '#/components/parameters/CategoryPathId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      responses: { '204': { description: Deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/products:
+    get:
+      operationId: adminListProducts
+      summary: List products for administration.
+      tags: [Admin]
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }]
+      responses: { '200': { description: Products, content: { application/json: { schema: { $ref: '#/components/schemas/PagedProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    post:
+      operationId: adminCreateProduct
+      summary: Create a product.
+      tags: [Admin]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProductWriteRequest' } } } }
+      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/products/{productId}:
+    patch:
+      operationId: adminUpdateProduct
+      summary: Update general product data.
+      tags: [Admin]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      description: General product editing using optimistic locking; If-Match must match current version or 409 is returned. `stock_on_hand` and `stock_reserved` are excluded; stock changes only through the stock-adjustments subresource, which does not use If-Match.
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProductUpdateRequest' } } } }
+      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    delete:
+      operationId: adminDeleteProduct
+      summary: Soft-delete a product.
+      tags: [Admin]
+      parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      responses: { '204': { description: Soft deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/products/{productId}/stock-adjustments:
+    post:
+      operationId: adminCreateProductStockAdjustment
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Create an audited manual stock adjustment for a product.
+      description: 'Requires role `admin`. Locks the product and updates only `stock_on_hand`; `stock_reserved` is never accepted or modified. The resulting `stock_on_hand` must not be below `stock_reserved`. Side effects: creates one immutable audit record and emits structured log `inventory.stock_adjusted` and metric `stock_adjustment_total{outcome}`.'
+      x-idempotency: '`Idempotency-Key` required; scope is authenticated admin + key + canonical request body. Same scope returns the original adjustment; divergent replay returns 409 `IDEMPOTENCY_KEY_REUSED`.'
+      parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/StockAdjustmentRequest' } } } }
+      responses: { '201': { description: Adjustment created, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockAdjustmentResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/banners:
+    get:
+      operationId: adminListBanners
+      summary: List banners for administration.
+      tags: [Admin]
+      responses: { '200': { description: Banners, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BannerResponse' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    post:
+      operationId: adminCreateBanner
+      summary: Create a banner.
+      tags: [Admin]
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannerWriteRequest' } } } }
+      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/banners/{bannerId}:
+    patch:
+      operationId: adminUpdateBanner
+      tags: [Admin]
+      summary: Update banner using optimistic locking; If-Match must match current version or 409 is returned.
+      parameters: [{ $ref: '#/components/parameters/BannerId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannerWriteRequest' } } } }
+      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+    delete:
+      operationId: adminDeleteBanner
+      summary: Soft-delete a banner.
+      tags: [Admin]
+      parameters: [{ $ref: '#/components/parameters/BannerId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      responses: { '204': { description: Soft deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/orders:
+    get:
+      operationId: adminListOrders
+      tags: [Admin]
+      summary: admin read-only order list. No admin order mutation path exists.
+      parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }, { name: status, in: query, schema: { $ref: '#/components/schemas/OrderStatus' } }]
+      responses: { '200': { description: Orders, content: { application/json: { schema: { $ref: '#/components/schemas/PagedOrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /admin/orders/{orderId}:
+    get:
+      operationId: adminGetOrder
+      tags: [Admin]
+      summary: admin read-only order detail.
+      parameters: [{ $ref: '#/components/parameters/OrderId' }]
+      responses: { '200': { description: Order, content: { application/json: { schema: { $ref: '#/components/schemas/OrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /media/upload-urls:
+    post:
+      operationId: createMediaUploadUrl
+      tags: [Media]
+      summary: admin issue short-lived S3 upload URL; upload completes outside API.
+      description: Issues a short-lived PUT URL for private S3 media. The browser never receives S3 credentials and upload completion is validated separately.
+      parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateUploadUrlRequest' } } } }
+      responses: { '201': { description: Presigned URL, content: { application/json: { schema: { $ref: '#/components/schemas/UploadUrlResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /webhooks/wompi:
+    post:
+      operationId: receiveWompiWebhook
+      tags: [Webhooks]
+      security: []
+      summary: Provider callback; signature header required; client calls forbidden.
+      description: The signature is validated over the raw request body before `payment_webhook_events` is persisted; only events with a valid signature are stored and processed. APPROVED consumes equivalent CHECKOUT_PENDING holds atomically. If holds cannot be consumed, stock is never decremented and an automatic idempotent refund is initiated; webhook remains deduplicated by provider event ID.
+      x-idempotency: provider event ID is deduplicated before state transition; automatic refund is deduplicated by payment ID.
+      parameters: [{ name: X-Event-Id, in: header, required: true, schema: { type: string, minLength: 1 } }, { name: X-Event-Signature, in: header, required: true, schema: { type: string, minLength: 1 } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProviderWebhookPayload' } } } }
+      responses: { '204': { description: Accepted or duplicate }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+  /webhooks/mercado-pago:
+    post:
+      operationId: receiveMercadoPagoWebhook
+      tags: [Webhooks]
+      security: []
+      summary: Provider callback; provider signature verified before processing.
+      description: The signature is validated over the raw request body before `payment_webhook_events` is persisted; only events with a valid signature are stored and processed. APPROVED consumes equivalent CHECKOUT_PENDING holds atomically. If holds cannot be consumed, stock is never decremented and an automatic idempotent refund is initiated; webhook remains deduplicated by provider event ID.
+      x-idempotency: provider event ID is deduplicated before state transition; automatic refund is deduplicated by payment ID.
+      parameters: [{ name: X-Request-Id, in: header, required: true, schema: { type: string } }, { name: X-Signature, in: header, required: true, schema: { type: string } }]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProviderWebhookPayload' } } } }
+      responses: { '204': { description: Accepted or duplicate }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+components:
+  securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT, description: Access JWT; role `admin` required for `/admin` and media endpoints; role `cliente` required for checkout and own orders. }, cartSessionCookie: { type: apiKey, in: cookie, name: merkee_cart_session, description: 'Opaque HttpOnly guest-session cookie; it is never returned in JSON, URL, localStorage or logs.' } }
+  parameters:
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, format: uuid }, description: Stable UUID unique to intended mutation. }
+    ProductId: { name: productId, in: path, required: true, schema: { type: string, format: uuid } }
+    CategoryPathId: { name: categoryId, in: path, required: true, schema: { type: string, format: uuid } }
+    BannerId: { name: bannerId, in: path, required: true, schema: { type: string, format: uuid } }
+    OrderId: { name: orderId, in: path, required: true, schema: { type: string, format: uuid } }
+    IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^[0-9]+$' }, description: Expected `version` for optimistic locking of category/product/banner updates. If it does not match the persisted version the update is rejected with 409 and no change is applied. Not used by stock-adjustments. }
+    CategoryId: { name: category_id, in: query, schema: { type: string, format: uuid } }
+    Search: { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 100 } }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    Size: { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
+  responses:
+    BadRequest: { description: Invalid input, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Unauthorized: { description: Authentication/signature failed, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Forbidden: { description: Insufficient role, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    NotFound: { description: Resource not found, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Gone: { description: Session or cart reservation expired; client must refresh cart state, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Conflict: { description: 'Duplicate, invalid state, concurrent modification or optimistic locking version mismatch (If-Match)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Unprocessable: { description: Checkout inventory/business validation failed., content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    RateLimited: { description: Rate limit exceeded, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    InternalServerError: { description: Unexpected server error, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+  schemas:
+    Role: { type: string, enum: [admin, cliente] }
+    PaymentProvider: { type: string, enum: [WOMPI, MERCADO_PAGO] }
+    OrderStatus: { type: string, enum: [PENDING_PAYMENT, PAID, PAYMENT_FAILED, PAYMENT_EXPIRED, RESERVATION_EXPIRED, PAYMENT_REFUND_PENDING, PAYMENT_REFUNDED, PAYMENT_REFUND_FAILED] }
+    PaymentStatus: { type: string, enum: [PENDING, APPROVED, DECLINED, ERROR, EXPIRED, REFUNDED, REFUND_FAILED] }
+    RefundStatus: { type: string, enum: [PENDING, REFUNDED, REFUND_FAILED] }
+    CartStatus: { type: string, enum: [ACTIVE, CHECKOUT_PENDING, CLOSED, EXPIRED] }
+    ReservationStatus: { type: string, enum: [ACTIVE, CHECKOUT_PENDING, CONSUMED, RELEASED, EXPIRED] }
+    RegisterRequest: { type: object, required: [display_name, email, password], properties: { display_name: { type: string, minLength: 2, maxLength: 100 }, email: { type: string, format: email, maxLength: 254 }, password: { type: string, minLength: 12, maxLength: 128, format: password } } }
+    LoginRequest: { type: object, required: [email, password], properties: { email: { type: string, format: email }, password: { type: string, minLength: 1, maxLength: 128, format: password } } }
+    PasswordResetRequest: { type: object, required: [email], properties: { email: { type: string, format: email } } }
+    PasswordResetConfirmRequest: { type: object, required: [token, new_password], properties: { token: { type: string, minLength: 32, maxLength: 512 }, new_password: { type: string, minLength: 12, maxLength: 128, format: password } } }
+    UpdateProfileRequest: { type: object, minProperties: 1, properties: { display_name: { type: string, minLength: 2, maxLength: 100 }, phone: { type: [string, 'null'], maxLength: 30 } } }
+    UserResponse: { type: object, required: [id, display_name, email, role, must_change_password], properties: { id: { type: string, format: uuid }, display_name: { type: string }, email: { type: string, format: email }, role: { $ref: '#/components/schemas/Role' }, must_change_password: { type: boolean, description: 'When true the client must route only to initial-password-change, profile read, refresh or logout.' }, phone: { type: [string, 'null'] } } }
+    InitialPasswordChangeRequest: { type: object, required: [current_password, new_password], properties: { current_password: { type: string, minLength: 1, maxLength: 128, format: password }, new_password: { type: string, minLength: 12, maxLength: 128, format: password } } }
+    SessionResponse: { type: object, required: [access_token, expires_at, user], properties: { access_token: { type: string, minLength: 1 }, expires_at: { type: string, format: date-time }, user: { $ref: '#/components/schemas/UserResponse' } } }
+    ImageResponse: { type: object, required: [key, url, alt_text, position], properties: { key: { type: string }, url: { type: string, format: uri }, alt_text: { type: string }, position: { type: integer, minimum: 0 } } }
+    CategoryResponse: { type: object, required: [id, name, image, version], properties: { id: { type: string, format: uuid }, name: { type: string }, image: { $ref: '#/components/schemas/ImageResponse' }, version: { type: integer, minimum: 1, description: Optimistic locking version; send it via If-Match on updates. } } }
+    ProductResponse: { type: object, required: [id, category, name, description, regular_price_cop, sale_price_cop, unit, stock_available, images, version], properties: { id: { type: string, format: uuid }, category: { $ref: '#/components/schemas/CategoryResponse' }, name: { type: string }, description: { type: string }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string }, stock_available: { type: integer, minimum: 0 }, images: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ImageResponse' } }, version: { type: integer, minimum: 1, description: Optimistic locking version; send it via If-Match on updates. } } }
+    BannerResponse: { type: object, required: [id, name, image, display_order, active, version], properties: { id: { type: string, format: uuid }, name: { type: string }, image: { $ref: '#/components/schemas/ImageResponse' }, target_path: { type: [string, 'null'], pattern: '^/' }, display_order: { type: integer, minimum: 0 }, active: { type: boolean }, version: { type: integer, minimum: 1, description: Optimistic locking version; send it via If-Match on updates. } } }
+    CartItemMutationRequest: { type: object, required: [product_id, quantity], properties: { product_id: { type: string, format: uuid }, quantity: { type: integer, minimum: 1, maximum: 999 } } }
+    SetCartItemQuantityRequest: { type: object, required: [quantity], properties: { quantity: { type: integer, minimum: 1, maximum: 999 } } }
+    CartItemResponse: { type: object, required: [product, quantity, reservation_status, reservation_expires_at], properties: { product: { $ref: '#/components/schemas/ProductResponse' }, quantity: { type: integer, minimum: 1 }, reservation_status: { $ref: '#/components/schemas/ReservationStatus' }, reservation_expires_at: { type: [string, 'null'], format: date-time, description: ACTIVE reservation expiry; null when the reservation is a CHECKOUT_PENDING hold because those holds do not expire by inactivity. } } }
+    CartResponse: { type: object, required: [id, status, items, items_subtotal_cop, delivery_fee_cop, iva_cop, tax_rate_basis_points, total_cop, reservation_expires_at], properties: { id: { type: string, format: uuid }, status: { $ref: '#/components/schemas/CartStatus' }, items: { type: array, items: { $ref: '#/components/schemas/CartItemResponse' } }, items_subtotal_cop: { type: integer, minimum: 0 }, delivery_fee_cop: { type: integer, const: 5000 }, reservation_expires_at: { type: [string, 'null'], format: date-time, description: ACTIVE reservation expiry; null when checkout holds are pending because those holds do not expire by inactivity. }, iva_cop: { type: integer, minimum: 0, description: '`floor((items_subtotal_cop * 19 + 50) / 100)`, applied once using HALF_UP to the COP peso.' }, tax_rate_basis_points: { type: integer, const: 1900, description: Fixed 19% IVA. }, total_cop: { type: integer, minimum: 0, description: items_subtotal_cop + delivery_fee_cop + iva_cop. } } }
+    DeliveryAddressRequest: { type: object, required: [recipient_name, line1, city, phone], properties: { recipient_name: { type: string, minLength: 2, maxLength: 100 }, line1: { type: string, minLength: 5, maxLength: 180 }, city: { type: string, minLength: 2, maxLength: 100 }, phone: { type: string, minLength: 7, maxLength: 30 } } }
+    CreateCheckoutRequest: { type: object, required: [delivery_address, payment_provider], properties: { delivery_address: { $ref: '#/components/schemas/DeliveryAddressRequest' }, payment_provider: { $ref: '#/components/schemas/PaymentProvider' } } }
+    CheckoutResponse: { type: object, required: [order, payment, provider_checkout_url], properties: { order: { $ref: '#/components/schemas/OrderResponse' }, payment: { $ref: '#/components/schemas/PaymentResponse' }, provider_checkout_url: { type: string, format: uri } } }
+    OrderItemResponse: { type: object, required: [product_id, product_name, unit, unit_price_cop, quantity, subtotal_cop], properties: { product_id: { type: [string, 'null'], format: uuid }, product_name: { type: string }, unit: { type: string }, unit_price_cop: { type: integer }, quantity: { type: integer }, subtotal_cop: { type: integer } } }
+    PaymentResponse: { type: object, required: [id, provider, status, amount_cop], properties: { id: { type: string, format: uuid }, provider: { $ref: '#/components/schemas/PaymentProvider' }, status: { $ref: '#/components/schemas/PaymentStatus' }, amount_cop: { type: integer, minimum: 0 }, provider_reference: { type: [string, 'null'] } } }
+    PaymentRefundResponse: { type: object, required: [id, status, amount_cop], properties: { id: { type: string, format: uuid }, status: { $ref: '#/components/schemas/RefundStatus' }, amount_cop: { type: integer, minimum: 0 }, provider_refund_reference: { type: [string, 'null'] } } }
+    OrderResponse: { type: object, required: [id, order_number, status, items_subtotal_cop, delivery_fee_cop, iva_cop, tax_rate_basis_points, total_cop, items, created_at], properties: { id: { type: string, format: uuid }, order_number: { type: string }, status: { $ref: '#/components/schemas/OrderStatus' }, items_subtotal_cop: { type: integer }, delivery_fee_cop: { type: integer, const: 5000 }, iva_cop: { type: integer, minimum: 0 }, tax_rate_basis_points: { type: integer, const: 1900 }, total_cop: { type: integer, minimum: 0 }, items: { type: array, items: { $ref: '#/components/schemas/OrderItemResponse' } }, payment: { $ref: '#/components/schemas/PaymentResponse' }, refund: { anyOf: [{ $ref: '#/components/schemas/PaymentRefundResponse' }, { type: 'null' }] }, created_at: { type: string, format: date-time } } }
+    CategoryWriteRequest: { type: object, required: [name, image_key], properties: { name: { type: string, minLength: 2, maxLength: 100 }, image_key: { type: string, minLength: 1 } } }
+    ProductWriteRequest: { type: object, required: [category_id, name, description, regular_price_cop, sale_price_cop, unit, stock_on_hand, images], properties: { category_id: { type: string, format: uuid }, name: { type: string, minLength: 2, maxLength: 160 }, description: { type: string, minLength: 1, maxLength: 10000 }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string, minLength: 1, maxLength: 40 }, stock_on_hand: { type: integer, minimum: 0, description: Initial stock only at product creation. }, images: { type: array, minItems: 1, maxItems: 10, items: { type: object, required: [key, alt_text, position], properties: { key: { type: string }, alt_text: { type: string, maxLength: 160 }, position: { type: integer, minimum: 0 } } } } } }
+    ProductUpdateRequest: { type: object, required: [category_id, name, description, regular_price_cop, sale_price_cop, unit, images], properties: { category_id: { type: string, format: uuid }, name: { type: string, minLength: 2, maxLength: 160 }, description: { type: string, minLength: 1, maxLength: 10000 }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string, minLength: 1, maxLength: 40 }, images: { type: array, minItems: 1, maxItems: 10, items: { type: object, required: [key, alt_text, position], properties: { key: { type: string }, alt_text: { type: string, maxLength: 160 }, position: { type: integer, minimum: 0 } } } } }, additionalProperties: false }
+    StockAdjustmentRequest: { type: object, required: [quantity_delta, reason], additionalProperties: false, properties: { quantity_delta: { oneOf: [{ type: integer, maximum: -1 }, { type: integer, minimum: 1 }] }, reason: { type: string, minLength: 3, maxLength: 500 } } }
+    StockAdjustmentResponse: { type: object, required: [id, product_id, quantity_delta, reason, stock_on_hand_before, stock_on_hand_after, stock_reserved, stock_available, created_at], properties: { id: { type: string, format: uuid }, product_id: { type: string, format: uuid }, quantity_delta: { type: integer }, reason: { type: string }, stock_on_hand_before: { type: integer, minimum: 0 }, stock_on_hand_after: { type: integer, minimum: 0 }, stock_reserved: { type: integer, minimum: 0 }, stock_available: { type: integer, minimum: 0 }, created_at: { type: string, format: date-time } } }
+    BannerWriteRequest: { type: object, required: [name, image_key, display_order, active], properties: { name: { type: string, minLength: 2, maxLength: 160 }, image_key: { type: string }, target_path: { type: [string, 'null'], pattern: '^/' }, display_order: { type: integer, minimum: 0 }, active: { type: boolean } } }
+    CreateUploadUrlRequest: { type: object, required: [content_type, content_length], properties: { content_type: { type: string, enum: [image/jpeg, image/png, image/webp] }, content_length: { type: integer, minimum: 1, maximum: 5242880 } } }
+    UploadUrlResponse: { type: object, required: [key, upload_url, expires_at], properties: { key: { type: string }, upload_url: { type: string, format: uri }, expires_at: { type: string, format: date-time } } }
+    ProviderWebhookPayload: { type: object, description: Provider-native payload retained minimally after signature verification, additionalProperties: true }
+    PageMeta: { type: object, required: [page, size, total], properties: { page: { type: integer }, size: { type: integer }, total: { type: integer } } }
+    PagedProductResponse: { type: object, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/ProductResponse' } }, page: { $ref: '#/components/schemas/PageMeta' } } }
+    PagedOrderResponse: { type: object, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/OrderResponse' } }, page: { $ref: '#/components/schemas/PageMeta' } } }
+    ApiErrorDetail: { type: object, required: [field, reason], properties: { field: { type: string }, reason: { type: string } } }
+    ApiErrorResponse: { type: object, required: [timestamp, status, error, code, message, path, trace_id], properties: { timestamp: { type: string, format: date-time }, status: { type: integer }, error: { type: string }, code: { type: string }, message: { type: string }, path: { type: string }, trace_id: { type: string }, details: { type: array, items: { $ref: '#/components/schemas/ApiErrorDetail' } } } }
