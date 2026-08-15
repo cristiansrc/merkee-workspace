@@ -32,6 +32,44 @@ Módulos: `identity`, `media`, `catalog`, `cart-reservation`, `orders`, `payment
 
 `catalog` escribe stock físico al crear/ajustar; `payments` lo descuenta al consumir pago aprobado. Solo `cart-reservation` y `payments` escriben `products.stock_reserved`. `admin-query` nunca escribe. Controladores no consultan Prisma; dominio no depende de NestJS/Prisma/HTTP.
 
+## ROP, errores y límites hexagonales obligatorios
+
+Todo puerto de entrada y caso de uso de `domain` o `application` devuelve exactamente `Result<Success, DomainError>`; `Success` es el DTO de aplicación o `void` para efectos sin representación. Un `DomainError` es un valor discriminado estable (`code`, `kind`, `messageKey`, `metadata` sin secretos/PII) y no una excepción. Las ramas esperadas de negocio —incluidos conflicto, recurso/estado inexistente, autorización de negocio, idempotencia, stock, expiración y transición inválida— se devuelven por el rail `Failure`.
+
+Las excepciones solo representan fallos técnicos inesperados. Cada adapter de salida captura excepciones de Prisma, proveedor de pagos, red, S3, reloj o correo en su límite, las registra sin secretos/PII y las traduce a un `DomainError` aplicable o a `TECHNICAL_DEPENDENCY_FAILURE`; no las propaga hacia controllers ni dominio. Si no puede clasificarse con seguridad, el adapter devuelve `TECHNICAL_DEPENDENCY_FAILURE`, el controller responde el `500` OpenAPI y no revela la causa. No se usa `throw`/`catch` como flujo de negocio ni se lanza un `HttpException` desde dominio o aplicación.
+
+Los controllers REST y handlers de webhook son adapters de entrada: validan sintaxis/transporte, autenticación/firma y tamaño/raw-body cuando proceda; convierten a Command; invocan un único puerto de entrada; y mapean `Result` al status/cuerpo OpenAPI. No contienen reglas de negocio, transacciones, acceso a Prisma ni llamadas directas a puertos de salida. Los webhooks de pago validan firma sobre raw body antes de crear el Command; el caso de uso decide deduplicación, transición y compensación. `domain` no importa NestJS, Prisma, HTTP, DTOs OpenAPI ni SDKs externos; `application` depende solo de `domain` y de sus puertos. Dependency-cruiser debe fallar el build si existe `domain → application|infrastructure` o `application → infrastructure`.
+
+### Catálogo estable `DomainError` y proyección OpenAPI
+
+La respuesta pública para un `DomainError` usa siempre `ApiErrorResponse` de `docs/api/openapi.yaml` (`application/problem+json`): `status` es el status de esta tabla, `code` es el valor exacto, `message` es localizado por `messageKey`, `path` y `trace_id` se completan en el adapter HTTP y `details` no incluye PII, tokens, hashes ni causas técnicas. El catálogo es aditivo: no se renombran ni reutilizan códigos; añadir un código exige actualizar esta tabla y la documentación OpenAPI de la respuesta correspondiente antes de implementar.
+
+| Código estable | Casos de uso/flujo | HTTP y respuesta OpenAPI |
+|---|---|---|
+| `INVALID_DOMAIN_INPUT` | Invariante de value object o comando semánticamente inválido tras validación de transporte | 400 `BadRequest` / `ApiErrorResponse` |
+| `AUTHENTICATION_REQUIRED`, `INVALID_CREDENTIALS`, `INVALID_WEBHOOK_SIGNATURE` | identidad, sesión y webhook | 401 `Unauthorized` / `ApiErrorResponse` |
+| `ADMIN_STOREFRONT_PURCHASE_FORBIDDEN`, `INITIAL_PASSWORD_CHANGE_REQUIRED`, `ACTOR_NOT_AUTHORIZED` | identidad, perfil, carrito, checkout y administración | 403 `Forbidden` / `ApiErrorResponse` |
+| `RESOURCE_NOT_FOUND`, `CART_ITEM_NOT_FOUND` | perfil, catálogo, carrito, órdenes y administración | 404 `NotFound` / `ApiErrorResponse` |
+| `SESSION_EXPIRED`, `CART_RESERVATION_EXPIRED` | carrito, reserva y checkout | 410 `Gone` / `ApiErrorResponse` |
+| `EMAIL_ALREADY_REGISTERED`, `IDEMPOTENCY_KEY_REUSED`, `VERSION_MISMATCH`, `DUPLICATE_WEBHOOK_EVENT`, `ORDER_ALREADY_EXISTS`, `INVALID_STATE_TRANSITION` | identidad/provisión, catálogo, carrito, checkout, pagos/webhooks y refunds | 409 `Conflict` / `ApiErrorResponse` |
+| `ACTIVATION_TOKEN_INVALID_OR_EXPIRED`, `PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED`, `CURRENT_PASSWORD_INVALID`, `STOCK_INSUFFICIENT`, `RESERVATION_NOT_ACTIVE`, `CHECKOUT_NOT_ALLOWED`, `PAYMENT_HOLD_NOT_CONSUMABLE` | activación/password-change, catálogo/stock, cart-reservation/reaper, checkout, pagos/refunds | 422 `Unprocessable` / `ApiErrorResponse` |
+| `TECHNICAL_DEPENDENCY_FAILURE` | traducción en adapters de Prisma, proveedores, S3, correo o red no clasificable | 500 `InternalServerError` / `ApiErrorResponse`; causa solo en log/traza interna |
+
+La validación puramente estructural de request/header/path permanece como 400 `BadRequest`; rate limiting permanece 429 `RateLimited` y no es `DomainError`. `ApiErrorResponse.code` de OpenAPI es el contrato de serialización de este catálogo; cada operación solo puede emitir los códigos compatibles con sus statuses ya declarados.
+
+### Aplicación por flujo y pruebas exigidas
+
+| Flujo | Resultado Failure obligatorio y comportamiento verificable |
+|---|---|
+| Identidad, provisión y activación | Registro/provisión/activación devuelven `Result`; token inválido/expirado no filtra estado; reintento de provisión conserva el resultado idempotente; activación concurrente consume una vez. |
+| Perfil y password-change | Campos inmutables, contraseña actual incorrecta e idempotencia divergente son `Failure`; éxito rota sesión actual y revoca las demás una vez incluso bajo reintento concurrente. |
+| Catálogo y stock adjustment | Invariante `stock_on_hand >= stock_reserved`, `If-Match` e idempotencia se resuelven como `Failure`; ajustes concurrentes bloquean/serializan producto y nunca modifican `stock_reserved`. |
+| Cart-reservation y reaper | Reserva insuficiente, expiración y transiciones terminales son `Failure`; reaper concurrente libera a lo sumo una vez y conserva el contador agregado consistente. |
+| Checkout | Reserva no activa, estado inválido e idempotencia divergente son `Failure`; dos checkouts concurrentes no crean dos órdenes/pagos ni convierten una reserva más de una vez. |
+| Pagos, webhooks y refunds | Firma inválida, evento duplicado, transición inválida y hold no consumible son `Failure`; reintentos/concurrencia no duplican consumo, descuento ni refund; el fallo post-aprobación inicia compensación idempotente. |
+
+Por cada caso de uso afectado se exigen pruebas unitarias de ambas ramas `Success` y cada familia `Failure`; pruebas de adapter que demuestren la traducción de excepción técnica; pruebas HTTP que prueben status y `ApiErrorResponse.code`; y pruebas de idempotencia/concurrencia para los flujos señalados. Dependency-cruiser se ejecuta como prueba de arquitectura y bloquea las importaciones prohibidas.
+
 ## Identidad, autorización y sesiones
 
 Roles exclusivos: `admin`, `cliente`. JWT de acceso ≤10 min solo en memoria; token opaco hashado en cookie `HttpOnly; Secure; SameSite=Lax`, rotado al refresh. Argon2id. CSRF Origin/double-submit, CORS allowlist, CSP/HSTS/nosniff, rate limits de login/registro/reset/activación.
@@ -58,11 +96,11 @@ Checkout cliente bloquea reservas, recalcula snapshots y convierte ACTIVE→CHEC
 
 ## Decomposition Contract
 
-Fuentes autoritativas: esta spec, OpenAPI, contrato Prisma, ADRs y shared context. Rutas nuevas canónicas: `POST /v1/admin/users`, `POST /v1/auth/admin-activations`, `POST /v1/auth/password-change`; rutas prohibidas: auto-registro admin y `POST /auth/initial-password-change` (histórica **superseded**). DTOs: `CreateAdminUserRequest`, `AdminUserProvisionResponse`, `AdminActivationRequest`, `PasswordChangeRequest`, `UpdateProfileRequest`. Tabla nueva `admin_activation_tokens`. Orden permitido: contrato OpenAPI→migración/esquema→identity→catálogo/carrito→checkout/pagos→SPAs→observabilidad/pruebas. Términos stale prohibidos: admin comprador, perfil con dirección persistida, hard delete de producto v1, token de activación en claro/log, hold checkout 10 min, `base_fee_cop`, IVA no HALF_UP 19%.
+Fuentes autoritativas: esta spec, OpenAPI, contrato Prisma, ADRs y shared context. Rutas nuevas canónicas: `POST /v1/admin/users`, `POST /v1/auth/admin-activations`, `POST /v1/auth/password-change`; rutas prohibidas: auto-registro admin y `POST /auth/initial-password-change` (histórica **superseded**). DTOs: `CreateAdminUserRequest`, `AdminUserProvisionResponse`, `AdminActivationRequest`, `PasswordChangeRequest`, `UpdateProfileRequest`; tipo transversal obligatorio: `Result<Success, DomainError>` y catálogo de códigos de §ROP. Tabla nueva `admin_activation_tokens`. Orden permitido: contrato OpenAPI→migración/esquema→identity→catálogo/carrito→checkout/pagos→SPAs→observabilidad/pruebas. Términos stale prohibidos: admin comprador, perfil con dirección persistida, hard delete de producto v1, token de activación en claro/log, hold checkout 10 min, `base_fee_cop`, IVA no HALF_UP 19%, excepciones de negocio, controller con Prisma, `domain` importando NestJS/Prisma/HTTP/SDK externo, o `application` importando infraestructura.
 
 ## Estado de revisión y riesgos restantes
 
-Las decisiones NC-01, NC-03, NC-04, NC-05, NC-06/07, NC-08 y NC-10 están resueltas. Pendientes reales no bloqueantes: canal seguro operativo para entregar el token de activación, contenido de emails no transaccionales v2 y definición legal definitiva de retención/supresión antes de producción. La revalidación formal de Solution Architect del 2026-08-15 (nuevo flujo identity/provisión) tuvo veredicto `ready` tras remediar F-01/F-02/F-03/H-01/H-02/H-03/H-04. La revalidación de Spec Validator sigue pendiente; no hay aprobación `ready` de Spec Validator ni handoff.
+Las decisiones NC-01, NC-03, NC-04, NC-05, NC-06/07, NC-08 y NC-10 están resueltas. Pendientes reales no bloqueantes: canal seguro operativo para entregar el token de activación, revisión legal/contable de retención/anonimización antes de producción y notificaciones de compra v2. ADR-017 fija ROP, catálogo de errores y dependency-cruiser para la futura codificación. El cambio documental posterior al veredicto de Spec Validator del 2026-08-15 exige revalidación antes de cualquier commit; el incremento permanece en `planning`, sin handoff ni aprobación humana escrita.
 
 ## Historial superseded
 

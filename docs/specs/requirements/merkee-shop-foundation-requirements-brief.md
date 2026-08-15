@@ -25,6 +25,7 @@ Supermercado online para Colombia (COP, `es-CO`), con React storefront y panel a
 6. Checkout calcula IVA 19% HALF_UP COP una vez, entrega 5000 COP; la aprobación sin hold consumible reembolsa sin descontar stock. Ajustes de stock son auditados e idempotentes; edición usa `If-Match`.
 7. S3 privado/CloudFront OAC; no tarjeta. Texto visible y mensajes a usuario en `es-CO`; valores COP sin decimales.
 8. Retención técnica provisional NC-08: minimización, logs sin PII, tokens/carritos terminales 30 días, sesiones purga operativa, logs 90 días, órdenes/pagos/auditoría 5 años, anonimización operacional de PII y credenciales; revisión legal/contable previa a producción. Acceso/rectificación por autoservicio v1 con endpoints existentes: acceso vía `GET /me` y `GET /orders`/detalle; rectificación vía `PATCH /me` solo de `display_name`/`phone`. Email, rol y dirección de perfil no editables en v1. **Anonimización v1:** `display_name`/`phone` → `null` o neutro no identificable; `password_hash` invalidado con hash aleatorio no reutilizable; `email` → identificador irreversible/no operativo si la política legal lo permite; snapshots de orden preservados solo mientras sean necesarios y luego anonimizados. Supuestos legales provisionales, no asesoría.
+9. Codificación futura: cada caso de uso de dominio/aplicación retorna `Result<Success, DomainError>`; los errores de negocio esperados no lanzan excepciones. Controllers/webhooks validan transporte/firma, llaman un caso de uso y mapean su Result al `ApiErrorResponse` OpenAPI; no acceden a Prisma ni contienen reglas de negocio. Dominio sin NestJS, Prisma, HTTP o SDKs externos; dependency-cruiser bloquea dependencias `domain→application|infrastructure` y `application→infrastructure`. El catálogo de códigos HTTP/OpenAPI estable y los flujos obligatorios están en Master Spec §ROP.
 
 ## Criterios de aceptación
 
@@ -38,6 +39,9 @@ Supermercado online para Colombia (COP, `es-CO`), con React storefront y panel a
 | CA-06 | PATCH perfil rechaza email, role y dirección; cambio de contraseña revoca otras sesiones. |
 | CA-07 | Soft delete oculta producto público; no existe hard delete en v1. |
 | CA-08 | Retenciones y anonimización se aplican según política provisional y dejan evidencia sin PII en logs. |
+| CA-09 | Cada caso de uso afectado prueba `Success` y sus `Failure` de negocio; adapters traducen fallos técnicos y HTTP devuelve el `ApiErrorResponse.code` estable. |
+| CA-10 | Identidad/provisión/activación, perfil/password-change, ajuste de stock, cart-reservation/reaper, checkout y pagos/webhooks/refunds tienen pruebas de idempotencia y concurrencia cuando mutan estado. |
+| CA-11 | Dependency-cruiser falla ante `domain→application|infrastructure` o `application→infrastructure`; controllers y webhooks no acceden a Prisma. |
 
 ## Fuera de alcance y pendientes reales
 
