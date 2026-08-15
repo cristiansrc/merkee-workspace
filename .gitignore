@@ -38,3 +38,6 @@ Thumbs.db
 .idea/
 .vscode/
 *.local
+
+# Repositorios de proyectos anidados
+projects/
