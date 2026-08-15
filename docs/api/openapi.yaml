@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: merkee.shop API
   version: 0.1.0-planning
-  description: Canonical API Design First contract. All money values are integer COP. No endpoint accepts raw card data. Every valid user action associated with a session renews its 10-minute inactivity timeout and ACTIVE reservations; provider webhooks do not. CHECKOUT_PENDING holds remain until payment or reconciliation reaches a terminal state. Category/product/banner updates use optimistic locking via If-Match (mismatch returns 409); stock-adjustments are excluded from it.
+  description: Contrato canónico de API Design First. Todos los valores monetarios son COP enteros. Ningún endpoint acepta datos crudos de tarjeta. Toda acción válida de usuario asociada a una sesión renueva su tiempo de inactividad de 10 minutos y las reservas ACTIVE; los webhooks del proveedor no. Los holds CHECKOUT_PENDING permanecen hasta que el pago o la conciliación alcanza un estado terminal. Las actualizaciones de categoría/producto/banner usan bloqueo optimista vía If-Match (el desajuste devuelve 409); los ajustes de stock quedan excluidos de ello.
 servers:
   - url: https://api.merkee.shop/v1
 security: [{ bearerAuth: [] }]
@@ -12,359 +12,359 @@ paths:
       operationId: registerCustomer
       tags: [Auth]
       security: []
-      summary: Register a cliente and start a session.
-      x-idempotency: N/A; duplicate email returns conflict.
+      summary: Registra un cliente e inicia una sesión.
+      x-idempotency: No aplica; un correo duplicado devuelve conflicto.
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/RegisterRequest' } } } }
-      responses: { '201': { description: Session created, headers: { Location: { schema: { type: string } }, Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Sesión creada, headers: { Location: { schema: { type: string } }, Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/login:
     post:
       operationId: login
       tags: [Auth]
       security: []
-      summary: Authenticate with email and password. Cliente promotes a guest cart; admin instead releases guest ACTIVE reservations, closes its cart and receives a separate admin session without cart.
-      x-idempotency: N/A; each success creates a new session.
+      summary: Autentica con correo y contraseña. El cliente promueve el carrito de invitado; el admin, en cambio, libera las reservas ACTIVE del invitado, cierra su carrito y recibe una sesión de admin separada sin carrito.
+      x-idempotency: No aplica; cada éxito crea una nueva sesión.
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/LoginRequest' } } } }
-      responses: { '200': { description: Session, headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Sesión, headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/refresh:
     post:
       operationId: refreshSession
       tags: [Auth]
       security: []
-      summary: Rotate valid HttpOnly refresh cookie and return new access token.
-      x-idempotency: N/A; rotated token cannot be replayed.
-      responses: { '200': { description: Refreshed session, headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      summary: Rota la cookie de refresco HttpOnly válida y devuelve un nuevo token de acceso.
+      x-idempotency: No aplica; el token rotado no puede reproducirse.
+      responses: { '200': { description: Sesión refrescada, headers: { Set-Cookie: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/SessionResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/logout:
     post:
       operationId: logout
       tags: [Auth]
-      summary: Revoke current session and release every active reservation of its cart. SPA clears only its derived Redux cart view.
-      x-idempotency: Session revoke and release transitions are idempotent.
-      responses: { '204': { description: Revoked and reservations released }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      summary: Revoca la sesión actual y libera todas las reservas activas de su carrito. El SPA limpia solo su vista derivada de carrito en Redux.
+      x-idempotency: Las transiciones de revocación de sesión y liberación son idempotentes.
+      responses: { '204': { description: Revocada y reservas liberadas }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/password-reset-requests:
     post:
       operationId: requestPasswordReset
       tags: [Auth]
       security: []
-      summary: Request reset email without disclosing email existence.
-      x-idempotency: one active reset token per user; repeated requests invalidate predecessor.
+      summary: Solicita el correo de restablecimiento sin revelar la existencia del correo.
+      x-idempotency: un token de restablecimiento activo por usuario; las solicitudes repetidas invalidan el predecesor.
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PasswordResetRequest' } } } }
-      responses: { '202': { description: Accepted regardless of account existence }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '202': { description: Aceptado independientemente de la existencia de la cuenta }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/password-resets:
     post:
       operationId: resetPassword
       tags: [Auth]
       security: []
-      summary: Consume one-time reset token and revoke all sessions.
-      x-idempotency: token consumption is atomic; replay returns 400. Malformed token syntax returns 400; an otherwise syntactically valid invalid or expired token returns 422 `PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED`.
+      summary: Consume el token de restablecimiento de un solo uso y revoca todas las sesiones.
+      x-idempotency: 'el consumo del token es atómico; la reproducción devuelve 400. La sintaxis malformada del token devuelve 400; un token sintácticamente válido pero inválido o expirado devuelve 422 `PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED`.'
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PasswordResetConfirmRequest' } } } }
-      responses: { '204': { description: Password changed }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' } , '422': { $ref: '#/components/responses/Unprocessable', description: '422 `PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED` for a syntactically valid invalid or expired token.' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Contraseña cambiada }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' } , '422': { $ref: '#/components/responses/Unprocessable', description: '422 `PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED` para un token sintácticamente válido pero inválido o expirado.' }, '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/password-change:
     post:
       operationId: changePassword
       tags: [Auth]
-      summary: Change current password, including the mandatory first change for an admin.
-      description: 'Requires authentication and current_password. Side effects: atomically changes password hash, clears must_change_password when set, revokes every other session and preserves only the current rotated session. No credential is returned or logged. Admin with must_change_password=true may only read profile, refresh, logout or call this endpoint.'
-      x-idempotency: '`Idempotency-Key` required; same principal, key and canonical request body returns 204; divergent replay returns 409.'
+      summary: Cambia la contraseña actual, incluido el primer cambio obligatorio para un admin.
+      description: 'Requiere autenticación y current_password. Efectos secundarios: cambia atómicamente el hash de la contraseña, limpia must_change_password cuando está establecido, revoca todas las demás sesiones y conserva solo la sesión rotada actual. No se devuelve ni registra ninguna credencial. Un admin con must_change_password=true solo puede leer el perfil, refrescar, cerrar sesión o llamar a este endpoint.'
+      x-idempotency: 'Se requiere `Idempotency-Key`; el mismo principal, clave y cuerpo de solicitud canónico devuelve 204; la reproducción divergente devuelve 409.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/PasswordChangeRequest' } } } }
-      responses: { '204': { description: Password changed, headers: { Set-Cookie: { schema: { type: string }, description: 'Rotated HttpOnly refresh cookie for the preserved current session; every other session is revoked.' } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } , '422': { $ref: '#/components/responses/Unprocessable', description: '422 `CURRENT_PASSWORD_INVALID`.' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Contraseña cambiada, headers: { Set-Cookie: { schema: { type: string }, description: 'Cookie de refresco HttpOnly rotada para la sesión actual conservada; todas las demás sesiones quedan revocadas.' } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden' }, '409': { $ref: '#/components/responses/Conflict' } , '422': { $ref: '#/components/responses/Unprocessable', description: '422 `CURRENT_PASSWORD_INVALID`.' }, '500': { $ref: '#/components/responses/InternalServerError' } }
   /auth/admin-activations:
     post:
       operationId: activateAdmin
       tags: [Auth]
       security: []
-      summary: Consume one opaque, one-time admin activation token and set the first password.
-      description: 'Owned by the `identity` module. Token is hashed at rest, expires after 24 hours, is atomically consumed and must never be logged, traced, metrified or returned.'
-      x-idempotency: Token consumption is atomic; a replay after success returns 400 without disclosing token state. A syntactically valid invalid or expired token returns 422 `ACTIVATION_TOKEN_INVALID_OR_EXPIRED`.
+      summary: Consume un token de activación de admin opaco y de un solo uso y establece la primera contraseña.
+      description: 'Pertenece al módulo `identity`. El token se almacena con hash, expira a las 24 horas, se consume atómicamente y nunca debe registrarse, trazarse, medirse ni devolverse.'
+      x-idempotency: 'El consumo del token es atómico; una reproducción tras el éxito devuelve 400 sin revelar el estado del token. Un token sintácticamente válido pero inválido o expirado devuelve 422 `ACTIVATION_TOKEN_INVALID_OR_EXPIRED`.'
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AdminActivationRequest' } } } }
-      responses: { '204': { description: Admin activated }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' }, '422': { $ref: '#/components/responses/Unprocessable', description: '422 `ACTIVATION_TOKEN_INVALID_OR_EXPIRED` for a syntactically valid invalid or expired token.' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Admin activado }, '400': { $ref: '#/components/responses/BadRequest' }, '429': { $ref: '#/components/responses/RateLimited' }, '422': { $ref: '#/components/responses/Unprocessable', description: '422 `ACTIVATION_TOKEN_INVALID_OR_EXPIRED` para un token sintácticamente válido pero inválido o expirado.' }, '500': { $ref: '#/components/responses/InternalServerError' } }
   /me:
     get:
       operationId: getMyProfile
       tags: [Profile]
-      summary: Get current profile.
-      x-idempotency: N/A read-only.
-      responses: { '200': { description: Profile, content: { application/json: { schema: { $ref: '#/components/schemas/UserResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      summary: Obtiene el perfil actual.
+      x-idempotency: No aplica solo lectura.
+      responses: { '200': { description: Perfil, content: { application/json: { schema: { $ref: '#/components/schemas/UserResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     patch:
       operationId: updateMyProfile
       tags: [Profile]
-      summary: Update only display_name and phone; email and role are immutable and address is order snapshot only.
-      x-idempotency: '`Idempotency-Key` required; replay returns original response.'
+      summary: Actualiza solo display_name y phone; el correo y el rol son inmutables y la dirección es solo una instantánea del pedido.
+      x-idempotency: 'Se requiere `Idempotency-Key`; la reproducción devuelve la respuesta original.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/UpdateProfileRequest' } } } }
-      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/UserResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/UserResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /categories:
     get:
       operationId: listCategories
       tags: [Catalog]
       security: []
-      summary: List active categories for storefront.
-      x-idempotency: N/A read-only.
-      responses: { '200': { description: Categories, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryResponse' } } } } } , '500': { $ref: '#/components/responses/InternalServerError' } , '429': { $ref: '#/components/responses/RateLimited' } }
+      summary: Lista las categorías activas para la tienda.
+      x-idempotency: No aplica solo lectura.
+      responses: { '200': { description: Categorías, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryResponse' } } } } } , '500': { $ref: '#/components/responses/InternalServerError' } , '429': { $ref: '#/components/responses/RateLimited' } }
   /products:
     get:
       operationId: listProducts
       tags: [Catalog]
       security: []
-      summary: Search/list active products.
-      x-idempotency: N/A read-only.
+      summary: Busca/lista los productos activos.
+      x-idempotency: No aplica solo lectura.
       parameters: [{ $ref: '#/components/parameters/CategoryId' }, { $ref: '#/components/parameters/Search' }, { $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }]
-      responses: { '200': { description: Products, content: { application/json: { schema: { $ref: '#/components/schemas/PagedProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Productos, content: { application/json: { schema: { $ref: '#/components/schemas/PagedProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /products/{productId}:
     get:
       operationId: getProduct
       tags: [Catalog]
       security: []
-      summary: Get a product and current available stock.
-      x-idempotency: N/A read-only.
+      summary: Obtiene un producto y el stock disponible actual.
+      x-idempotency: No aplica solo lectura.
       parameters: [{ $ref: '#/components/parameters/ProductId' }]
-      responses: { '200': { description: Product, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Producto, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /banners:
     get:
       operationId: listActiveBanners
       tags: [Catalog]
       security: []
-      summary: List active home banners by display order.
-      x-idempotency: N/A read-only.
+      summary: Lista los banners activos de la portada por orden de visualización.
+      x-idempotency: No aplica solo lectura.
       responses: { '200': { description: Banners, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BannerResponse' } } } } } , '500': { $ref: '#/components/responses/InternalServerError' } , '429': { $ref: '#/components/responses/RateLimited' } }
   /cart:
     get:
       operationId: getCart
       tags: [Cart]
       security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
-      summary: Get the server cart and active reservation expiry for the current authenticated or guest session.
-      description: 'Side effect: a valid cart/session access renews its inactivity timeout to 10 minutes. No cart, cart item, or reservation is persisted in browser storage.'
-      x-idempotency: N/A read; valid access may renew the same session expiry only.
-      responses: { '200': { description: Cart, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      summary: Obtiene el carrito del servidor y la expiración de la reserva activa para la sesión actual autenticada o de invitado.
+      description: 'Efecto secundario: un acceso válido al carrito/sesión renueva su tiempo de inactividad a 10 minutos. No se persiste ningún carrito, ítem de carrito ni reserva en el almacenamiento del navegador.'
+      x-idempotency: No aplica lectura; un acceso válido solo puede renovar la expiración de la misma sesión.
+      responses: { '200': { description: Carrito, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /cart/items:
     post:
       operationId: addCartItem
       tags: [Cart]
       security: [{ bearerAuth: [] }, { cartSessionCookie: [] }, {}]
-      summary: Add product quantity to current cart and reserve stock.
-      description: 'Side effects: creates a guest session/cookie if absent; transaction atomically increments item reservation and products.stock_reserved. Reservation expires after 10 minutes of inactivity.'
-      x-idempotency: '`Idempotency-Key` required; same session, key and canonical request body return the original CartResponse. Reusing a key with a different body returns 409.'
+      summary: Agrega cantidad de producto al carrito actual y reserva stock.
+      description: 'Efectos secundarios: crea una sesión/cookie de invitado si no existe; la transacción incrementa atómicamente la reserva del ítem y products.stock_reserved. La reserva expira tras 10 minutos de inactividad.'
+      x-idempotency: 'Se requiere `Idempotency-Key`; la misma sesión, clave y cuerpo de solicitud canónico devuelven el CartResponse original. Reutilizar una clave con un cuerpo diferente devuelve 409.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CartItemMutationRequest' } } } }
-      responses: { '201': { description: Reserved cart item, headers: { Set-Cookie: { schema: { type: string }, description: Guest cart-session cookie only when a guest session is created. } }, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '422': { $ref: '#/components/responses/Unprocessable' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Ítem de carrito reservado, headers: { Set-Cookie: { schema: { type: string }, description: Cookie de sesión de carrito de invitado solo cuando se crea una sesión de invitado. } }, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '422': { $ref: '#/components/responses/Unprocessable' }, '500': { $ref: '#/components/responses/InternalServerError' } }
   /cart/items/{productId}:
     put:
       operationId: setCartItemQuantity
       tags: [Cart]
       security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
-      summary: Set reserved quantity for an existing product; zero is not valid and must use DELETE.
-      description: 'Side effects: atomically adjusts reservation delta and `stock_reserved`; a decrease releases the delta. Successful access renews the 10 minute expiry.'
-      x-idempotency: '`Idempotency-Key` required; same session, key and canonical request body return the original CartResponse; divergent replay returns 409.'
+      summary: Establece la cantidad reservada para un producto existente; cero no es válido y debe usarse DELETE.
+      description: 'Efectos secundarios: ajusta atómicamente el delta de la reserva y `stock_reserved`; una disminución libera el delta. El acceso exitoso renueva la expiración de 10 minutos.'
+      x-idempotency: 'Se requiere `Idempotency-Key`; la misma sesión, clave y cuerpo de solicitud canónico devuelven el CartResponse original; la reproducción divergente devuelve 409.'
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SetCartItemQuantityRequest' } } } }
-      responses: { '200': { description: Updated cart, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '422': { $ref: '#/components/responses/Unprocessable' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Carrito actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '422': { $ref: '#/components/responses/Unprocessable' }, '500': { $ref: '#/components/responses/InternalServerError' } }
     delete:
       operationId: removeCartItem
       tags: [Cart]
       security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
-      summary: Remove cart item and release its reservation.
-      description: 'Side effect: marks the reservation released and decrements `stock_reserved` atomically. A repeated request with the same idempotency key succeeds without a second decrement.'
-      x-idempotency: '`Idempotency-Key` required; same session/key returns 204. Divergent replay returns 409.'
+      summary: Elimina el ítem del carrito y libera su reserva.
+      description: 'Efecto secundario: marca la reserva como liberada y decrementa `stock_reserved` atómicamente. Una solicitud repetida con la misma clave de idempotencia tiene éxito sin un segundo decremento.'
+      x-idempotency: 'Se requiere `Idempotency-Key`; la misma sesión/clave devuelve 204. La reproducción divergente devuelve 409.'
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses: { '204': { description: Reservation released }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Reserva liberada }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /checkouts:
     post:
       operationId: createCheckout
       tags: [Checkout]
-      summary: Consume the current server cart holds, create pending order/payment and initialize provider checkout.
-      description: 'Side effects: locks active cart reservations, creates order/payment and may call provider. Prices, delivery fee (5000 COP), `iva_cop = floor((items_subtotal_cop * 19 + 50) / 100)` (19%, HALF_UP to COP peso) and total are server-calculated snapshots; IVA is applied exactly once to items subtotal. Requires customer role. Converted CHECKOUT_PENDING holds persist until payment/reconciliation reaches a terminal status; they do not expire through the 10-minute inactivity timer. Returns 422 and creates no payment for an expired reservation or invalid checkout state.'
-      x-idempotency: '`Idempotency-Key` required per payment attempt; same key/body returns same pending checkout.'
+      summary: Consume los holds del carrito actual del servidor, crea el pedido/pago pendiente e inicializa el checkout del proveedor.
+      description: 'Efectos secundarios: bloquea las reservas activas del carrito, crea el pedido/pago y puede llamar al proveedor. Los precios, el costo de envío (5000 COP), `iva_cop = floor((items_subtotal_cop * 19 + 50) / 100)` (19%, HALF_UP al peso COP) y el total son instantáneas calculadas en el servidor; el IVA se aplica exactamente una vez al subtotal de los ítems. Requiere rol de cliente. Los holds CHECKOUT_PENDING convertidos persisten hasta que el pago o la conciliación alcanza un estado terminal; no expiran por el temporizador de inactividad de 10 minutos. Devuelve 422 y no crea ningún pago para una reserva expirada o un estado de checkout inválido.'
+      x-idempotency: 'Se requiere `Idempotency-Key` por intento de pago; la misma clave/cuerpo devuelve el mismo checkout pendiente.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateCheckoutRequest' } } } }
-      responses: { '201': { description: Pending checkout, headers: { Location: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/CheckoutResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' }, '422': { $ref: '#/components/responses/Unprocessable' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Checkout pendiente, headers: { Location: { schema: { type: string } } }, content: { application/json: { schema: { $ref: '#/components/schemas/CheckoutResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' }, '422': { $ref: '#/components/responses/Unprocessable' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /orders:
     get:
       operationId: listMyOrders
       tags: [Orders]
-      summary: List orders of current customer only.
-      x-idempotency: N/A read-only.
+      summary: Lista solo los pedidos del cliente actual.
+      x-idempotency: No aplica solo lectura.
       parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }]
-      responses: { '200': { description: Orders, content: { application/json: { schema: { $ref: '#/components/schemas/PagedOrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Pedidos, content: { application/json: { schema: { $ref: '#/components/schemas/PagedOrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /orders/{orderId}:
     get:
       operationId: getMyOrder
       tags: [Orders]
-      summary: Get own order; admins use admin route.
-      x-idempotency: N/A read-only.
+      summary: Obtiene el pedido propio; los admins usan la ruta de admin.
+      x-idempotency: No aplica solo lectura.
       parameters: [{ $ref: '#/components/parameters/OrderId' }]
-      responses: { '200': { description: Order, content: { application/json: { schema: { $ref: '#/components/schemas/OrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN for admin; INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Pedido, content: { application/json: { schema: { $ref: '#/components/schemas/OrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/users:
     post:
       operationId: provisionAdminUser
       tags: [Admin]
-      summary: Provision an admin requiring one-time activation; only an admin whose must_change_password is false may call it.
-      description: 'Owned by the `identity` module. The `Admin` tag here only groups HTTP surface; it does not imply `admin-query` ownership. Creates admin with must_change_password=true and a 24-hour hashed activation token. Neither password nor token is returned, logged, traced, metrified or placed in outbox. Secure token delivery is an approved operational channel outside this API.'
-      x-idempotency: '`Idempotency-Key` required; scope is authenticated creator + key + canonical body. Same request returns original 201; divergent replay returns 409 IDEMPOTENCY_KEY_REUSED.'
+      summary: Aprovisiona un admin que requiere activación de un solo uso; solo un admin cuyo must_change_password sea false puede llamarlo.
+      description: 'Pertenece al módulo `identity`. El tag `Admin` aquí solo agrupa la superficie HTTP; no implica propiedad de `admin-query`. Crea un admin con must_change_password=true y un token de activación con hash de 24 horas. Ni la contraseña ni el token se devuelven, registran, trazan, miden ni se colocan en el outbox. La entrega segura del token es un canal operativo aprobado fuera de esta API.'
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es creador autenticado + clave + cuerpo canónico. La misma solicitud devuelve el 201 original; la reproducción divergente devuelve 409 IDEMPOTENCY_KEY_REUSED.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateAdminUserRequest' } } } }
-      responses: { '201': { description: Admin provisioned, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/AdminUserProvisionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Admin aprovisionado, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/AdminUserProvisionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' }, '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/categories:
     get:
       operationId: adminListCategories
       tags: [Admin]
-      summary: admin list including inactive.
-      responses: { '200': { description: Categories, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryResponse' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      summary: Lista las categorías, incluidas las inactivas.
+      responses: { '200': { description: Categorías, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/CategoryResponse' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     post:
       operationId: adminCreateCategory
       tags: [Admin]
-      summary: admin create category referring to validated S3 media key.
+      summary: El admin crea una categoría referenciando una clave de media S3 validada.
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWriteRequest' } } } }
-      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/categories/{categoryId}:
     patch:
       operationId: adminUpdateCategory
       tags: [Admin]
-      summary: Update category using optimistic locking; If-Match must match current version or 409 is returned.
+      summary: Actualiza la categoría usando bloqueo optimista; If-Match debe coincidir con la versión actual o se devuelve 409.
       parameters: [{ $ref: '#/components/parameters/CategoryPathId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWriteRequest' } } } }
-      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     delete:
       operationId: adminDeleteCategory
       tags: [Admin]
-      summary: Soft-delete only when no active product belongs to category.
+      summary: Eliminación lógica solo cuando ningún producto activo pertenece a la categoría.
       parameters: [{ $ref: '#/components/parameters/CategoryPathId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses: { '204': { description: Deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Eliminado }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/products:
     get:
       operationId: adminListProducts
-      summary: List products for administration.
+      summary: Lista los productos para administración.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }]
-      responses: { '200': { description: Products, content: { application/json: { schema: { $ref: '#/components/schemas/PagedProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Productos, content: { application/json: { schema: { $ref: '#/components/schemas/PagedProductResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     post:
       operationId: adminCreateProduct
-      summary: Create a product.
+      summary: Crea un producto.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProductWriteRequest' } } } }
-      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/products/{productId}:
     patch:
       operationId: adminUpdateProduct
-      summary: Update general product data.
+      summary: Actualiza los datos generales del producto.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      description: General product editing using optimistic locking; If-Match must match current version or 409 is returned. `stock_on_hand` and `stock_reserved` are excluded; stock changes only through the stock-adjustments subresource, which does not use If-Match.
+      description: 'Edición general del producto usando bloqueo optimista; If-Match debe coincidir con la versión actual o se devuelve 409. `stock_on_hand` y `stock_reserved` quedan excluidos; el stock cambia solo a través del subrecurso de ajustes de stock, que no usa If-Match.'
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProductUpdateRequest' } } } }
-      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     delete:
       operationId: adminDeleteProduct
-      summary: Soft-delete a product.
+      summary: Eliminación lógica de un producto.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses: { '204': { description: Soft deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Eliminado lógicamente }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/products/{productId}/stock-adjustments:
     post:
       operationId: adminCreateProductStockAdjustment
       tags: [Admin]
       security: [{ bearerAuth: [] }]
-      summary: Create an audited manual stock adjustment for a product.
-      description: 'Requires role `admin`. Locks the product and updates only `stock_on_hand`; `stock_reserved` is never accepted or modified. The resulting `stock_on_hand` must not be below `stock_reserved`. Side effects: creates one immutable audit record and emits structured log `inventory.stock_adjusted` and metric `stock_adjustment_total{outcome}`.'
-      x-idempotency: '`Idempotency-Key` required; scope is authenticated admin + key + canonical request body. Same scope returns the original adjustment; divergent replay returns 409 `IDEMPOTENCY_KEY_REUSED`.'
+      summary: Crea un ajuste manual de stock auditado para un producto.
+      description: 'Requiere rol `admin`. Bloquea el producto y actualiza solo `stock_on_hand`; `stock_reserved` nunca se acepta ni se modifica. El `stock_on_hand` resultante no debe estar por debajo de `stock_reserved`. Efectos secundarios: crea un registro de auditoría inmutable y emite el log estructurado `inventory.stock_adjusted` y la métrica `stock_adjustment_total{outcome}`.'
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo de solicitud canónico. El mismo alcance devuelve el ajuste original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/StockAdjustmentRequest' } } } }
-      responses: { '201': { description: Adjustment created, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockAdjustmentResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Ajuste creado, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/StockAdjustmentResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/banners:
     get:
       operationId: adminListBanners
-      summary: List banners for administration.
+      summary: Lista los banners para administración.
       tags: [Admin]
-      responses: { '200': { description: Banners, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BannerResponse' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Banners, content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/BannerResponse' } } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     post:
       operationId: adminCreateBanner
-      summary: Create a banner.
+      summary: Crea un banner.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannerWriteRequest' } } } }
-      responses: { '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/banners/{bannerId}:
     patch:
       operationId: adminUpdateBanner
       tags: [Admin]
-      summary: Update banner using optimistic locking; If-Match must match current version or 409 is returned.
+      summary: Actualiza el banner usando bloqueo optimista; If-Match debe coincidir con la versión actual o se devuelve 409.
       parameters: [{ $ref: '#/components/parameters/BannerId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannerWriteRequest' } } } }
-      responses: { '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
     delete:
       operationId: adminDeleteBanner
-      summary: Soft-delete a banner.
+      summary: Eliminación lógica de un banner.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/BannerId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses: { '204': { description: Soft deleted }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Eliminado lógicamente }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/orders:
     get:
       operationId: adminListOrders
       tags: [Admin]
-      summary: admin read-only order list. No admin order mutation path exists.
+      summary: Lista de pedidos de solo lectura para admin. No existe ruta de mutación de pedidos para admin.
       parameters: [{ $ref: '#/components/parameters/Page' }, { $ref: '#/components/parameters/Size' }, { name: status, in: query, schema: { $ref: '#/components/schemas/OrderStatus' } }]
-      responses: { '200': { description: Orders, content: { application/json: { schema: { $ref: '#/components/schemas/PagedOrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Pedidos, content: { application/json: { schema: { $ref: '#/components/schemas/PagedOrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/orders/{orderId}:
     get:
       operationId: adminGetOrder
       tags: [Admin]
-      summary: admin read-only order detail.
+      summary: Detalle de pedido de solo lectura para admin.
       parameters: [{ $ref: '#/components/parameters/OrderId' }]
-      responses: { '200': { description: Order, content: { application/json: { schema: { $ref: '#/components/schemas/OrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Pedido, content: { application/json: { schema: { $ref: '#/components/schemas/OrderResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /media/upload-urls:
     post:
       operationId: createMediaUploadUrl
       tags: [Media]
-      summary: admin issue short-lived S3 upload URL; upload completes outside API.
-      description: Issues a short-lived PUT URL for private S3 media. The browser never receives S3 credentials and upload completion is validated separately.
+      summary: El admin emite una URL de subida S3 de corta duración; la subida se completa fuera de la API.
+      description: Emite una URL PUT de corta duración para media S3 privada. El navegador nunca recibe credenciales de S3 y la finalización de la subida se valida por separado.
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateUploadUrlRequest' } } } }
-      responses: { '201': { description: Presigned URL, content: { application/json: { schema: { $ref: '#/components/schemas/UploadUrlResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED when the admin must change password.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: URL prefirmada, content: { application/json: { schema: { $ref: '#/components/schemas/UploadUrlResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /webhooks/wompi:
     post:
       operationId: receiveWompiWebhook
       tags: [Webhooks]
       security: []
-      summary: Provider callback; signature header required; client calls forbidden.
-      description: The signature is validated over the raw request body before `payment_webhook_events` is persisted; only events with a valid signature are stored and processed. APPROVED consumes equivalent CHECKOUT_PENDING holds atomically. If holds cannot be consumed, stock is never decremented and an automatic idempotent refund is initiated; webhook remains deduplicated by provider event ID.
-      x-idempotency: provider event ID is deduplicated before state transition; automatic refund is deduplicated by payment ID.
+      summary: Webhook del proveedor; se requiere el header de firma; las llamadas de cliente están prohibidas.
+      description: 'La firma se valida sobre el cuerpo crudo de la solicitud antes de persistir `payment_webhook_events`; solo se almacenan y procesan los eventos con firma válida. APPROVED consume atómicamente los holds CHECKOUT_PENDING equivalentes. Si los holds no pueden consumirse, el stock nunca se decrementa y se inicia un reembolso idempotente automático; el webhook permanece deduplicado por el ID de evento del proveedor.'
+      x-idempotency: el ID de evento del proveedor se deduplica antes de la transición de estado; el reembolso automático se deduplica por ID de pago.
       parameters: [{ name: X-Event-Id, in: header, required: true, schema: { type: string, minLength: 1 } }, { name: X-Event-Signature, in: header, required: true, schema: { type: string, minLength: 1 } }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProviderWebhookPayload' } } } }
-      responses: { '204': { description: Accepted or duplicate }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Aceptado o duplicado }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /webhooks/mercado-pago:
     post:
       operationId: receiveMercadoPagoWebhook
       tags: [Webhooks]
       security: []
-      summary: Provider callback; provider signature verified before processing.
-      description: The signature is validated over the raw request body before `payment_webhook_events` is persisted; only events with a valid signature are stored and processed. APPROVED consumes equivalent CHECKOUT_PENDING holds atomically. If holds cannot be consumed, stock is never decremented and an automatic idempotent refund is initiated; webhook remains deduplicated by provider event ID.
-      x-idempotency: provider event ID is deduplicated before state transition; automatic refund is deduplicated by payment ID.
+      summary: Webhook del proveedor; la firma del proveedor se verifica antes del procesamiento.
+      description: 'La firma se valida sobre el cuerpo crudo de la solicitud antes de persistir `payment_webhook_events`; solo se almacenan y procesan los eventos con firma válida. APPROVED consume atómicamente los holds CHECKOUT_PENDING equivalentes. Si los holds no pueden consumirse, el stock nunca se decrementa y se inicia un reembolso idempotente automático; el webhook permanece deduplicado por el ID de evento del proveedor.'
+      x-idempotency: el ID de evento del proveedor se deduplica antes de la transición de estado; el reembolso automático se deduplica por ID de pago.
       parameters: [{ name: X-Request-Id, in: header, required: true, schema: { type: string } }, { name: X-Signature, in: header, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProviderWebhookPayload' } } } }
-      responses: { '204': { description: Accepted or duplicate }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Aceptado o duplicado }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
 components:
-  securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT, description: Access JWT; role `admin` required for `/admin` and media endpoints; role `cliente` required for checkout and own orders. }, cartSessionCookie: { type: apiKey, in: cookie, name: merkee_cart_session, description: 'Opaque HttpOnly guest-session cookie; it is never returned in JSON, URL, localStorage or logs.' } }
+  securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT, description: 'JWT de acceso; se requiere rol `admin` para los endpoints `/admin` y de media; se requiere rol `cliente` para el checkout y los pedidos propios.' }, cartSessionCookie: { type: apiKey, in: cookie, name: merkee_cart_session, description: 'Cookie opaca de sesión de invitado HttpOnly; nunca se devuelve en JSON, URL, localStorage ni logs.' } }
   parameters:
-    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, format: uuid }, description: Stable UUID unique to intended mutation. }
+    IdempotencyKey: { name: Idempotency-Key, in: header, required: true, schema: { type: string, format: uuid }, description: UUID estable único para la mutación prevista. }
     ProductId: { name: productId, in: path, required: true, schema: { type: string, format: uuid } }
     CategoryPathId: { name: categoryId, in: path, required: true, schema: { type: string, format: uuid } }
     BannerId: { name: bannerId, in: path, required: true, schema: { type: string, format: uuid } }
     OrderId: { name: orderId, in: path, required: true, schema: { type: string, format: uuid } }
-    IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^[0-9]+$' }, description: Expected `version` for optimistic locking of category/product/banner updates. If it does not match the persisted version the update is rejected with 409 and no change is applied. Not used by stock-adjustments. }
+    IfMatch: { name: If-Match, in: header, required: true, schema: { type: string, pattern: '^[0-9]+$' }, description: '`version` esperada para el bloqueo optimista de las actualizaciones de categoría/producto/banner. Si no coincide con la versión persistida, la actualización se rechaza con 409 y no se aplica ningún cambio. No se usa en los ajustes de stock.' }
     CategoryId: { name: category_id, in: query, schema: { type: string, format: uuid } }
     Search: { name: q, in: query, schema: { type: string, minLength: 2, maxLength: 100 } }
     Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
     Size: { name: size, in: query, schema: { type: integer, minimum: 1, maximum: 100, default: 20 } }
   responses:
-    BadRequest: { description: Invalid input, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    Unauthorized: { description: Authentication/signature failed, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    Forbidden: { description: 'Insufficient role or restricted state. Error codes include `ACTOR_NOT_AUTHORIZED`, `ADMIN_STOREFRONT_PURCHASE_FORBIDDEN` (admin on cart/checkout/own orders) and `INITIAL_PASSWORD_CHANGE_REQUIRED` (admin with must_change_password=true on any protected resource other than profile read, refresh, logout or password-change).', content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    NotFound: { description: Resource not found, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    Gone: { description: Session or cart reservation expired; client must refresh cart state, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    Conflict: { description: 'Duplicate, invalid state, concurrent modification or optimistic locking version mismatch (If-Match)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    Unprocessable: { description: Checkout inventory/business validation failed., content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    RateLimited: { description: Rate limit exceeded, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
-    InternalServerError: { description: Unexpected server error, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    BadRequest: { description: Entrada inválida, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Unauthorized: { description: Autenticación/firma fallida, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Forbidden: { description: 'Rol insuficiente o estado restringido. Los códigos de error incluyen `ACTOR_NOT_AUTHORIZED`, `ADMIN_STOREFRONT_PURCHASE_FORBIDDEN` (admin en carrito/checkout/pedidos propios) e `INITIAL_PASSWORD_CHANGE_REQUIRED` (admin con must_change_password=true en cualquier recurso protegido distinto de lectura de perfil, refresh, logout o cambio de contraseña).', content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    NotFound: { description: Recurso no encontrado, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Gone: { description: Sesión o reserva de carrito expirada; el cliente debe refrescar el estado del carrito, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Conflict: { description: 'Duplicado, estado inválido, modificación concurrente o desajuste de versión de bloqueo optimista (If-Match)', content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    Unprocessable: { description: Falló la validación de inventario/negocio del checkout., content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    RateLimited: { description: Límite de tasa excedido, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
+    InternalServerError: { description: Error inesperado del servidor, content: { application/problem+json: { schema: { $ref: '#/components/schemas/ApiErrorResponse' } } } }
   schemas:
     Role: { type: string, enum: [admin, cliente] }
     PaymentProvider: { type: string, enum: [WOMPI, MERCADO_PAGO] }
@@ -378,36 +378,36 @@ components:
     PasswordResetRequest: { type: object, required: [email], properties: { email: { type: string, format: email } } }
     PasswordResetConfirmRequest: { type: object, required: [token, new_password], properties: { token: { type: string, minLength: 32, maxLength: 512 }, new_password: { type: string, minLength: 12, maxLength: 128, format: password } } }
     UpdateProfileRequest: { type: object, minProperties: 1, properties: { display_name: { type: string, minLength: 2, maxLength: 100 }, phone: { type: [string, 'null'], maxLength: 30 } } }
-    UserResponse: { type: object, required: [id, display_name, email, role, must_change_password], properties: { id: { type: string, format: uuid }, display_name: { type: string }, email: { type: string, format: email }, role: { $ref: '#/components/schemas/Role' }, must_change_password: { type: boolean, description: 'When true an admin may only call password-change, profile read, refresh or logout.' }, phone: { type: [string, 'null'] } } }
+    UserResponse: { type: object, required: [id, display_name, email, role, must_change_password], properties: { id: { type: string, format: uuid }, display_name: { type: string }, email: { type: string, format: email }, role: { $ref: '#/components/schemas/Role' }, must_change_password: { type: boolean, description: 'Cuando es true, un admin solo puede llamar a cambio de contraseña, lectura de perfil, refresh o logout.' }, phone: { type: [string, 'null'] } } }
     PasswordChangeRequest: { type: object, required: [current_password, new_password], additionalProperties: false, properties: { current_password: { type: string, minLength: 1, maxLength: 128, format: password }, new_password: { type: string, minLength: 12, maxLength: 128, format: password } } }
     CreateAdminUserRequest: { type: object, required: [display_name, email], additionalProperties: false, properties: { display_name: { type: string, minLength: 2, maxLength: 100 }, email: { type: string, format: email, maxLength: 254 }, phone: { type: [string, 'null'], maxLength: 30 } } }
     AdminUserProvisionResponse: { type: object, required: [id, display_name, email, role, must_change_password, activation_expires_at], properties: { id: { type: string, format: uuid }, display_name: { type: string }, email: { type: string, format: email }, role: { type: string, const: admin }, must_change_password: { type: boolean, const: true }, phone: { type: [string, 'null'] }, activation_expires_at: { type: string, format: date-time } } }
     AdminActivationRequest: { type: object, required: [token, new_password], additionalProperties: false, properties: { token: { type: string, minLength: 32, maxLength: 512, writeOnly: true }, new_password: { type: string, minLength: 12, maxLength: 128, format: password, writeOnly: true } } }
     SessionResponse: { type: object, required: [access_token, expires_at, user], properties: { access_token: { type: string, minLength: 1 }, expires_at: { type: string, format: date-time }, user: { $ref: '#/components/schemas/UserResponse' } } }
     ImageResponse: { type: object, required: [key, url, alt_text, position], properties: { key: { type: string }, url: { type: string, format: uri }, alt_text: { type: string }, position: { type: integer, minimum: 0 } } }
-    CategoryResponse: { type: object, required: [id, name, image, version], properties: { id: { type: string, format: uuid }, name: { type: string }, image: { $ref: '#/components/schemas/ImageResponse' }, version: { type: integer, minimum: 1, description: Optimistic locking version; send it via If-Match on updates. } } }
-    ProductResponse: { type: object, required: [id, category, name, description, regular_price_cop, sale_price_cop, unit, stock_available, images, version], properties: { id: { type: string, format: uuid }, category: { $ref: '#/components/schemas/CategoryResponse' }, name: { type: string }, description: { type: string }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string }, stock_available: { type: integer, minimum: 0 }, images: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ImageResponse' } }, version: { type: integer, minimum: 1, description: Optimistic locking version; send it via If-Match on updates. } } }
-    BannerResponse: { type: object, required: [id, name, image, display_order, active, version], properties: { id: { type: string, format: uuid }, name: { type: string }, image: { $ref: '#/components/schemas/ImageResponse' }, target_path: { type: [string, 'null'], pattern: '^/' }, display_order: { type: integer, minimum: 0 }, active: { type: boolean }, version: { type: integer, minimum: 1, description: Optimistic locking version; send it via If-Match on updates. } } }
+    CategoryResponse: { type: object, required: [id, name, image, version], properties: { id: { type: string, format: uuid }, name: { type: string }, image: { $ref: '#/components/schemas/ImageResponse' }, version: { type: integer, minimum: 1, description: Versión de bloqueo optimista; envíela vía If-Match en las actualizaciones. } } }
+    ProductResponse: { type: object, required: [id, category, name, description, regular_price_cop, sale_price_cop, unit, stock_available, images, version], properties: { id: { type: string, format: uuid }, category: { $ref: '#/components/schemas/CategoryResponse' }, name: { type: string }, description: { type: string }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string }, stock_available: { type: integer, minimum: 0 }, images: { type: array, minItems: 1, items: { $ref: '#/components/schemas/ImageResponse' } }, version: { type: integer, minimum: 1, description: Versión de bloqueo optimista; envíela vía If-Match en las actualizaciones. } } }
+    BannerResponse: { type: object, required: [id, name, image, display_order, active, version], properties: { id: { type: string, format: uuid }, name: { type: string }, image: { $ref: '#/components/schemas/ImageResponse' }, target_path: { type: [string, 'null'], pattern: '^/' }, display_order: { type: integer, minimum: 0 }, active: { type: boolean }, version: { type: integer, minimum: 1, description: Versión de bloqueo optimista; envíela vía If-Match en las actualizaciones. } } }
     CartItemMutationRequest: { type: object, required: [product_id, quantity], properties: { product_id: { type: string, format: uuid }, quantity: { type: integer, minimum: 1, maximum: 999 } } }
     SetCartItemQuantityRequest: { type: object, required: [quantity], properties: { quantity: { type: integer, minimum: 1, maximum: 999 } } }
-    CartItemResponse: { type: object, required: [product, quantity, reservation_status, reservation_expires_at], properties: { product: { $ref: '#/components/schemas/ProductResponse' }, quantity: { type: integer, minimum: 1 }, reservation_status: { $ref: '#/components/schemas/ReservationStatus' }, reservation_expires_at: { type: [string, 'null'], format: date-time, description: ACTIVE reservation expiry; null when the reservation is a CHECKOUT_PENDING hold because those holds do not expire by inactivity. } } }
-    CartResponse: { type: object, required: [id, status, items, items_subtotal_cop, delivery_fee_cop, iva_cop, tax_rate_basis_points, total_cop, reservation_expires_at], properties: { id: { type: string, format: uuid }, status: { $ref: '#/components/schemas/CartStatus' }, items: { type: array, items: { $ref: '#/components/schemas/CartItemResponse' } }, items_subtotal_cop: { type: integer, minimum: 0 }, delivery_fee_cop: { type: integer, const: 5000 }, reservation_expires_at: { type: [string, 'null'], format: date-time, description: ACTIVE reservation expiry; null when checkout holds are pending because those holds do not expire by inactivity. }, iva_cop: { type: integer, minimum: 0, description: '`floor((items_subtotal_cop * 19 + 50) / 100)`, applied once using HALF_UP to the COP peso.' }, tax_rate_basis_points: { type: integer, const: 1900, description: Fixed 19% IVA. }, total_cop: { type: integer, minimum: 0, description: items_subtotal_cop + delivery_fee_cop + iva_cop. } } }
+    CartItemResponse: { type: object, required: [product, quantity, reservation_status, reservation_expires_at], properties: { product: { $ref: '#/components/schemas/ProductResponse' }, quantity: { type: integer, minimum: 1 }, reservation_status: { $ref: '#/components/schemas/ReservationStatus' }, reservation_expires_at: { type: [string, 'null'], format: date-time, description: Expiración de la reserva ACTIVE; null cuando la reserva es un hold CHECKOUT_PENDING porque esos holds no expiran por inactividad. } } }
+    CartResponse: { type: object, required: [id, status, items, items_subtotal_cop, delivery_fee_cop, iva_cop, tax_rate_basis_points, total_cop, reservation_expires_at], properties: { id: { type: string, format: uuid }, status: { $ref: '#/components/schemas/CartStatus' }, items: { type: array, items: { $ref: '#/components/schemas/CartItemResponse' } }, items_subtotal_cop: { type: integer, minimum: 0 }, delivery_fee_cop: { type: integer, const: 5000 }, reservation_expires_at: { type: [string, 'null'], format: date-time, description: 'Expiración de la reserva ACTIVE; null cuando los holds de checkout están pendientes porque esos holds no expiran por inactividad.' }, iva_cop: { type: integer, minimum: 0, description: '`floor((items_subtotal_cop * 19 + 50) / 100)`, aplicado una vez usando HALF_UP al peso COP.' }, tax_rate_basis_points: { type: integer, const: 1900, description: 'IVA fijo del 19%.' }, total_cop: { type: integer, minimum: 0, description: 'items_subtotal_cop + delivery_fee_cop + iva_cop.' } } }
     DeliveryAddressRequest: { type: object, required: [recipient_name, line1, city, phone], properties: { recipient_name: { type: string, minLength: 2, maxLength: 100 }, line1: { type: string, minLength: 5, maxLength: 180 }, city: { type: string, minLength: 2, maxLength: 100 }, phone: { type: string, minLength: 7, maxLength: 30 } } }
     CreateCheckoutRequest: { type: object, required: [delivery_address, payment_provider], properties: { delivery_address: { $ref: '#/components/schemas/DeliveryAddressRequest' }, payment_provider: { $ref: '#/components/schemas/PaymentProvider' } } }
     CheckoutResponse: { type: object, required: [order, payment, provider_checkout_url], properties: { order: { $ref: '#/components/schemas/OrderResponse' }, payment: { $ref: '#/components/schemas/PaymentResponse' }, provider_checkout_url: { type: string, format: uri } } }
     OrderItemResponse: { type: object, required: [product_id, product_name, unit, unit_price_cop, quantity, subtotal_cop], properties: { product_id: { type: [string, 'null'], format: uuid }, product_name: { type: string }, unit: { type: string }, unit_price_cop: { type: integer }, quantity: { type: integer }, subtotal_cop: { type: integer } } }
     PaymentResponse: { type: object, required: [id, provider, status, amount_cop], properties: { id: { type: string, format: uuid }, provider: { $ref: '#/components/schemas/PaymentProvider' }, status: { $ref: '#/components/schemas/PaymentStatus' }, amount_cop: { type: integer, minimum: 0 }, provider_reference: { type: [string, 'null'] } } }
     PaymentRefundResponse: { type: object, required: [id, status, amount_cop], properties: { id: { type: string, format: uuid }, status: { $ref: '#/components/schemas/RefundStatus' }, amount_cop: { type: integer, minimum: 0 }, provider_refund_reference: { type: [string, 'null'] } } }
-    OrderResponse: { type: object, required: [id, order_number, status, items_subtotal_cop, delivery_fee_cop, iva_cop, tax_rate_basis_points, total_cop, items, delivery_recipient_name, delivery_line1, delivery_city, delivery_phone, created_at], properties: { id: { type: string, format: uuid }, order_number: { type: string }, status: { $ref: '#/components/schemas/OrderStatus' }, items_subtotal_cop: { type: integer }, delivery_fee_cop: { type: integer, const: 5000 }, iva_cop: { type: integer, minimum: 0 }, tax_rate_basis_points: { type: integer, const: 1900 }, total_cop: { type: integer, minimum: 0 }, items: { type: array, items: { $ref: '#/components/schemas/OrderItemResponse' } }, delivery_recipient_name: { type: string, minLength: 2, maxLength: 100, description: 'Snapshot of the delivery recipient name captured at checkout; not the profile display_name.' }, delivery_line1: { type: string, minLength: 5, maxLength: 180, description: 'Snapshot of the delivery address line captured at checkout.' }, delivery_city: { type: string, minLength: 2, maxLength: 100, description: 'Snapshot of the delivery city captured at checkout.' }, delivery_phone: { type: string, minLength: 7, maxLength: 30, description: 'Snapshot of the delivery phone captured at checkout; not the profile phone.' }, payment: { $ref: '#/components/schemas/PaymentResponse' }, refund: { anyOf: [{ $ref: '#/components/schemas/PaymentRefundResponse' }, { type: 'null' }] }, created_at: { type: string, format: date-time } } }
+    OrderResponse: { type: object, required: [id, order_number, status, items_subtotal_cop, delivery_fee_cop, iva_cop, tax_rate_basis_points, total_cop, items, delivery_recipient_name, delivery_line1, delivery_city, delivery_phone, created_at], properties: { id: { type: string, format: uuid }, order_number: { type: string }, status: { $ref: '#/components/schemas/OrderStatus' }, items_subtotal_cop: { type: integer }, delivery_fee_cop: { type: integer, const: 5000 }, iva_cop: { type: integer, minimum: 0 }, tax_rate_basis_points: { type: integer, const: 1900 }, total_cop: { type: integer, minimum: 0 }, items: { type: array, items: { $ref: '#/components/schemas/OrderItemResponse' } }, delivery_recipient_name: { type: string, minLength: 2, maxLength: 100, description: 'Instantánea del nombre del destinatario de la entrega capturado en el checkout; no es el display_name del perfil.' }, delivery_line1: { type: string, minLength: 5, maxLength: 180, description: 'Instantánea de la línea de dirección de entrega capturada en el checkout.' }, delivery_city: { type: string, minLength: 2, maxLength: 100, description: 'Instantánea de la ciudad de entrega capturada en el checkout.' }, delivery_phone: { type: string, minLength: 7, maxLength: 30, description: 'Instantánea del teléfono de entrega capturado en el checkout; no es el teléfono del perfil.' }, payment: { $ref: '#/components/schemas/PaymentResponse' }, refund: { anyOf: [{ $ref: '#/components/schemas/PaymentRefundResponse' }, { type: 'null' }] }, created_at: { type: string, format: date-time } } }
     CategoryWriteRequest: { type: object, required: [name, image_key], properties: { name: { type: string, minLength: 2, maxLength: 100 }, image_key: { type: string, minLength: 1 } } }
-    ProductWriteRequest: { type: object, required: [category_id, name, description, regular_price_cop, sale_price_cop, unit, stock_on_hand, images], properties: { category_id: { type: string, format: uuid }, name: { type: string, minLength: 2, maxLength: 160 }, description: { type: string, minLength: 1, maxLength: 10000 }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string, minLength: 1, maxLength: 40 }, stock_on_hand: { type: integer, minimum: 0, description: Initial stock only at product creation. }, images: { type: array, minItems: 1, maxItems: 10, items: { type: object, required: [key, alt_text, position], properties: { key: { type: string }, alt_text: { type: string, maxLength: 160 }, position: { type: integer, minimum: 0 } } } } } }
+    ProductWriteRequest: { type: object, required: [category_id, name, description, regular_price_cop, sale_price_cop, unit, stock_on_hand, images], properties: { category_id: { type: string, format: uuid }, name: { type: string, minLength: 2, maxLength: 160 }, description: { type: string, minLength: 1, maxLength: 10000 }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string, minLength: 1, maxLength: 40 }, stock_on_hand: { type: integer, minimum: 0, description: Stock inicial solo en la creación del producto. }, images: { type: array, minItems: 1, maxItems: 10, items: { type: object, required: [key, alt_text, position], properties: { key: { type: string }, alt_text: { type: string, maxLength: 160 }, position: { type: integer, minimum: 0 } } } } } }
     ProductUpdateRequest: { type: object, required: [category_id, name, description, regular_price_cop, sale_price_cop, unit, images], properties: { category_id: { type: string, format: uuid }, name: { type: string, minLength: 2, maxLength: 160 }, description: { type: string, minLength: 1, maxLength: 10000 }, regular_price_cop: { type: integer, minimum: 0 }, sale_price_cop: { type: integer, minimum: 0 }, unit: { type: string, minLength: 1, maxLength: 40 }, images: { type: array, minItems: 1, maxItems: 10, items: { type: object, required: [key, alt_text, position], properties: { key: { type: string }, alt_text: { type: string, maxLength: 160 }, position: { type: integer, minimum: 0 } } } } }, additionalProperties: false }
     StockAdjustmentRequest: { type: object, required: [quantity_delta, reason], additionalProperties: false, properties: { quantity_delta: { oneOf: [{ type: integer, maximum: -1 }, { type: integer, minimum: 1 }] }, reason: { type: string, minLength: 3, maxLength: 500 } } }
     StockAdjustmentResponse: { type: object, required: [id, product_id, quantity_delta, reason, stock_on_hand_before, stock_on_hand_after, stock_reserved, stock_available, created_at], properties: { id: { type: string, format: uuid }, product_id: { type: string, format: uuid }, quantity_delta: { type: integer }, reason: { type: string }, stock_on_hand_before: { type: integer, minimum: 0 }, stock_on_hand_after: { type: integer, minimum: 0 }, stock_reserved: { type: integer, minimum: 0 }, stock_available: { type: integer, minimum: 0 }, created_at: { type: string, format: date-time } } }
     BannerWriteRequest: { type: object, required: [name, image_key, display_order, active], properties: { name: { type: string, minLength: 2, maxLength: 160 }, image_key: { type: string }, target_path: { type: [string, 'null'], pattern: '^/' }, display_order: { type: integer, minimum: 0 }, active: { type: boolean } } }
     CreateUploadUrlRequest: { type: object, required: [content_type, content_length], properties: { content_type: { type: string, enum: [image/jpeg, image/png, image/webp] }, content_length: { type: integer, minimum: 1, maximum: 5242880 } } }
     UploadUrlResponse: { type: object, required: [key, upload_url, expires_at], properties: { key: { type: string }, upload_url: { type: string, format: uri }, expires_at: { type: string, format: date-time } } }
-    ProviderWebhookPayload: { type: object, description: Provider-native payload retained minimally after signature verification, additionalProperties: true }
+    ProviderWebhookPayload: { type: object, description: Carga útil nativa del proveedor retenida mínimamente tras la verificación de la firma, additionalProperties: true }
     PageMeta: { type: object, required: [page, size, total], properties: { page: { type: integer }, size: { type: integer }, total: { type: integer } } }
     PagedProductResponse: { type: object, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/ProductResponse' } }, page: { $ref: '#/components/schemas/PageMeta' } } }
     PagedOrderResponse: { type: object, required: [items, page], properties: { items: { type: array, items: { $ref: '#/components/schemas/OrderResponse' } }, page: { $ref: '#/components/schemas/PageMeta' } } }
