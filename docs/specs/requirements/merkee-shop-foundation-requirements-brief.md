@@ -32,6 +32,7 @@ Las reglas de esta subsección sustituyen cualquier afirmación histórica incom
 - La edición general de producto no altera existencias. Un administrador realiza aumentos o reducciones mediante un ajuste explícito con delta entero no cero y motivo; no puede modificar reservas activas directamente ni dejar el stock físico por debajo del reservado.
 - Todo ajuste administrativo deja una auditoría mínima inmutable con producto, actor administrador, delta, motivo y existencias antes/después. La retención legal definitiva sigue pendiente.
 - Las ediciones administrativas de categorías, productos y banners usan **optimistic locking** por `version`: la actualización exige el `version` esperado vía `If-Match` y un desajuste responde `409`. El ajuste de stock queda excluido de este mecanismo (ya tiene lock transaccional e idempotencia).
+- Todo texto visible de storefront y admin debe estar en español de Colombia (`es-CO`), incluidos botones, navegación, formularios, validaciones, errores, estados vacíos y estados de carrito, pago y órdenes. Los emails de recuperación y mensajes de sistema dirigidos a personas usuarias también se emiten en español de Colombia. Los textos se obtienen de un catálogo de traducciones/localización desde el inicio; no se hardcodean textos de UI en inglés. Se permiten nombres propios de proveedores, marcas y términos técnicos necesarios. Los precios visibles usan formato colombiano en COP, sin decimales.
 
 ### Lo que la plantilla ya tiene (referencia funcional)
 | Funcionalidad | Estado en plantilla | Observaciones |
@@ -94,12 +95,14 @@ El sistema define **exactamente dos roles**: **admin** (panel de administración
 - **Carrito de compras (incluido modo invitado)**: Listado de items, edición de cantidades, cálculo de subtotal, IVA y total. Es un carrito de servidor asociado a sesión y cada cantidad activa reserva stock; la vista local no es fuente de verdad. Login/registro promueve y conserva el carrito de invitado y sus reservas activas.
 - **Checkout/Pago**: Flujo de pago con **Wompi** (predeterminado) y **Mercado Pago** (segunda opción). El login se exige en este punto si el usuario no está autenticado. El checkout conserva el hold pendiente hasta el resultado terminal del pago o su reconciliación.
 - **Historial de órdenes**: Listado de órdenes anteriores del cliente con estado.
+- **Idioma y localización**: Toda la UI visible al cliente se presenta en español de Colombia (`es-CO`), incluido el formato de importes COP sin decimales.
 
 ### 5.2 Panel de Administración (Admin)
 - **Gestión de categorías**: Crear, leer, actualizar y eliminar categorías con imagen asociada.
 - **Gestión de productos**: Crear, leer, actualizar y eliminar productos con múltiples imágenes, precios, descripción, unidad de medida y **una sola categoría asociada**. La edición general no modifica stock; el stock físico se incrementa o reduce solo mediante un ajuste administrativo explícito con delta entero no cero, motivo y auditoría mínima.
 - **Gestión de banners/sliders**: Crear, leer, actualizar y eliminar banners (imágenes promocionales del home).
 - **Consulta de órdenes**: Visualización de órdenes de todos los clientes **en modo solo lectura**. El admin no puede modificar estados, cancelar ni editar órdenes.
+- **Idioma y localización**: Toda la UI visible al administrador se presenta en español de Colombia (`es-CO`), incluido el formato de importes COP sin decimales.
 
 ### 5.3 Infraestructura y Calidad (requisitos no funcionales del usuario)
 - Base de datos: PostgreSQL.
@@ -335,6 +338,10 @@ El sistema define **exactamente dos roles**: **admin** (panel de administración
 - **CA-25**: El contrato API se define con OpenAPI antes de la implementación (API Design First).
 - **CA-26**: La cobertura de pruebas es mínima 85% por archivo testeable.
 - **CA-27**: Los precios se muestran en COP (pesos colombianos) y el idioma de la interfaz es español.
+- **CA-28**: Al recorrer las pantallas de storefront y admin, todos los textos visibles —navegación, botones, formularios, validaciones, mensajes de error, estados vacíos y estados de carrito, pago y órdenes— se muestran en español de Colombia; se exceptúan únicamente nombres propios de proveedores, marcas y términos técnicos necesarios.
+- **CA-29**: La revisión de los recursos de texto de ambas SPAs demuestra que cada texto visible se resuelve desde el catálogo de traducciones/localización y que no existen literales de UI en inglés hardcodeados.
+- **CA-30**: Una solicitud de recuperación de contraseña genera un email en español de Colombia y los mensajes de sistema destinados al usuario se presentan en el mismo idioma, sin modificar la respuesta neutra que evita revelar la existencia de una cuenta.
+- **CA-31**: En storefront y admin, los importes de producto, carrito, checkout y órdenes se presentan con localización colombiana, COP y cero decimales; su valor mostrado corresponde al entero COP recibido/calculado por el contrato.
 
 ---
 
@@ -415,6 +422,7 @@ Stack, sesión, persistencia de carrito, concurrencia/reservas, webhooks/reconci
 | **X-05** | Cobertura: sin tests vs 85% | La plantilla no tiene tests. El requisito de 85% es nuevo. |
 | **X-06** | Carrito: solo add-to-cart con login vs carrito completo + invitado + checkout | La plantilla requiere login para agregar al carrito. merkee.shop permite carrito de invitado y exige login solo al pagar. |
 | **X-07** | Órdenes: sin gestión vs consulta solo lectura | La plantilla no tiene gestión de órdenes. merkee.shop permite al admin consultar órdenes en modo solo lectura. |
+| **X-08** | Textos de UI: inglés en plantilla vs español de Colombia | La plantilla contiene textos en inglés. Antes de adoptar cualquier pantalla o flujo, sus textos visibles deben inventariarse y reemplazarse por claves/contenido del catálogo canónico `es-CO`; no se copian literales ingleses. Esta migración no altera rutas, DTOs, OpenAPI ni cálculos COP. |
 
 ### Estado de handoff
 `planning/pending`. Este brief no habilita handoff: prevalecen la Master Spec y contratos canónicos, y faltan la revisión de Spec Validator y la aprobación humana. *(Histórico superseded: el dictamen formal de Solution Architect quedó resuelto con veredicto final `ready-with-final-verdict` el 2026-08-15.)*
@@ -428,3 +436,4 @@ Stack, sesión, persistencia de carrito, concurrencia/reservas, webhooks/reconci
 | 2026-08-14 | Requirements Analyst | Creación inicial del brief basada en plantilla y requisitos verbales del usuario. Estado: `requirements-blocked`. |
 | 2026-08-14 | Requirements Analyst | Cierre del brief con decisiones confirmadas por el usuario: mercado Colombia/COP, stock post-pago, admin gestiona banners, admin solo consulta órdenes, producto una sola categoría, carrito se pierde al cerrar sesión (superseded: logout libera solo reservas `ACTIVE`; los holds `CHECKOUT_PENDING` sobreviven hasta estado terminal de pago/reconciliación), dos roles (admin/cliente), recuperación de contraseña, Wompi predeterminado + Mercado Pago secundario, carrito de invitado con login al pagar. Eliminada la advertencia incorrecta sobre el PDF. Decisiones técnicas (stack, sesión, concurrencia de stock) delegadas a Planner. Estado: `ready-for-planner`. |
 | 2026-08-15 | Planner | Sincronización con decisiones canónicas: IVA 19% HALF_UP COP aplicado una vez, carrito/reservas de servidor guest/autenticado, hold `CHECKOUT_PENDING`, reembolso automático y ajuste administrativo de stock con auditoría mínima. Afirmaciones incompatibles se marcan `superseded`; estado pasa a `planning`. |
+| 2026-08-15 | Planner | Sincronización documental del requisito canónico de localización: storefront, admin, emails de recuperación y mensajes de sistema orientados al usuario usan español de Colombia; textos visibles desde catálogo de traducciones, sin literales UI en inglés; importes visibles con COP colombiano. Estado permanece `planning`. |
