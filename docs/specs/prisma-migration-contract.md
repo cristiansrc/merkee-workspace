@@ -1,6 +1,6 @@
 # Contrato de migración Prisma — merkee.shop
 
-**Lifecycle status:** `revision-needed`  
+**Lifecycle status:** `awaiting-human-plan-approval`  
 **Spec Validator:** `pending`
 
 Contrato, no migración ejecutable. Ruta canónica vigente: `projects/merkee-shop-api/prisma/schema.prisma` y `projects/merkee-shop-api/prisma/migrations/` (verificada en disco: `schema.prisma` y `migrations/001_*`…`013_*` existen bajo esa ruta). Prisma Migrate es el único DDL. Aplicar en PostgreSQL/Testcontainers; nunca `db push`; evolución expand/contract mediante nueva migración. **HISTÓRICO/SUPERSEDED:** la referencia previa a `apps/api/prisma/` era de un layout monorepo anterior y no coincide con la estructura real del workspace.

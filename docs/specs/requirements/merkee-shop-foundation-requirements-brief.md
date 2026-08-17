@@ -1,7 +1,7 @@
 # Requirements Brief — merkee.shop Foundation
 
 ## Status
-`revision-needed`. Brief funcional consolidado; aprobación humana del plan otorgada el 2026-08-15 (**histórica/superseded**: invalidada por los cambios materiales posteriores ADR-018, migraciones 010–013, correcciones ROP y purga MSF-ID-002, más la remediación documental de estabilización 2026-08-16). Master Spec y OpenAPI son la fuente contractual. Se requiere revalidación focalizada de Spec Validator y, tras `ready`, nueva aprobación humana aplicable antes de cualquier handoff.
+`awaiting-human-plan-approval`. Brief funcional consolidado; la aprobación humana vigente se registra mediante el encabezado canónico del shared context. Master Spec y OpenAPI son la fuente contractual. La validación focalizada de Spec Validator para MSF-ID-002 continúa siendo el gate autoritativo.
 
 ## Objetivo y alcance
 

@@ -1,7 +1,8 @@
 # Decisiones de arquitectura — merkee.shop
 
-**Lifecycle status:** `revision-needed`  
+**Lifecycle status:** `awaiting-human-plan-approval`  
 **Spec Validator:** `pending`
+**Solution Architect:** `ready`
 
 | ID | Decisión | Motivo y aceptación |
 |---|---|---|

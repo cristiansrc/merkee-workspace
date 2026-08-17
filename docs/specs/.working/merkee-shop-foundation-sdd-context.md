@@ -1,11 +1,11 @@
 # Shared Context — merkee-shop-foundation
 
-**Lifecycle status:** `revision-needed`  
+**Lifecycle status:** `awaiting-human-plan-approval`  
 **Actualizado:** 2026-08-16
 
 ## Current status
 
-`revision-needed`: las migraciones 010–013, las correcciones ROP, la precisión documental posterior sobre la clasificación exclusiva de purga (`minimum_age_not_elapsed` → `replay_active` → `retention_not_elapsed` → `operation_pending` → `eligible`) y la formalización sincronizada de TD-MSF-ID-002-01/02/03 requieren revalidación focalizada. Las tres deudas no bloquean desarrollo local; TD-MSF-ID-002-02 y TD-MSF-ID-002-03 son gates antes de producción. El veredicto `ready` histórico está **superseded** e invalidado; Spec Validator permanece `pending`. No hay handoff ni nueva ejecución.
+`revision-needed`: las migraciones 010–013, las correcciones ROP, la precisión documental posterior sobre la clasificación exclusiva de purga (`minimum_age_not_elapsed` → `replay_active` → `retention_not_elapsed` → `operation_pending` → `eligible`), el **último cambio de código** (`idempotency_responsejson_rop_purge_note` 2026-08-16 — corrige el drift del nombre canónico `responseJson`/`response_json` en puerto/adapter/use-case de provisión y alinea `PurgeIdempotencyRecordsUseCase` al patrón ROP estricto de Master Spec §ROP / ADR-017) y la formalización sincronizada de TD-MSF-ID-002-01/02/03 requieren revalidación focalizada. Las tres deudas no bloquean desarrollo local; TD-MSF-ID-002-02 y TD-MSF-ID-002-03 son gates antes de producción. El veredicto `ready` histórico está **superseded** e invalidado; Spec Validator permanece `pending`. No hay handoff ni nueva ejecución. El cambio `idempotency_responsejson_rop_purge_note` **no añadió migraciones** (sigue siendo 13 migraciones 007–013) y no modificó OpenAPI ni otros módulos.
 
 ## Canonical artifacts
 
@@ -29,7 +29,7 @@
 | `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/architecture-decisions.md` | ADR-018 y addendum | Fija snapshot mínimo, purga exclusiva, bridge productivo y scheduler local; confirma evidencia 007–013 y ROP pendiente de revalidación. | pass |
 | `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/.working/merkee-shop-foundation-sdd-context.md` | lifecycle, aprobación y guardas | Registra el cambio posterior y mantiene `revision-needed`/`pending`. | pass |
 | `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/tasks/merkee-shop-foundation-task-board.md` | MSF-ID-002 y migración 013 | Marca superseded la evidencia de snapshot de tres campos y de deploy con 8 migraciones; conserva como única evidencia vigente 34 suites/249 tests, deploy 007–013, snapshot de cuatro claves con `body_hash`, diff sin drift e integración PostgreSQL. El tablero global sigue bloqueado por validación pendiente. | pass |
-| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/graphify-out/GRAPH_REPORT.md` | Grafo actual y dependencias | Reporte fechado 2026-08-16: 1,055 nodos, 2,430 aristas, 68 comunidades, sin ciclos de importación; construido desde el commit `89bcd155`. La igualdad con `HEAD` no es verificable sin Git (blocked para frescura); no se afirma que el grafo está actualizado respecto a `HEAD`. Relaciona el flujo MSF-ID-002 con el conjunto canónico. No se modificó. | pass (contenido) / blocked (frescura) |
+| `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/graphify-out/GRAPH_REPORT.md` | Grafo actual y dependencias | Reporte fechado 2026-08-16: 1,245 nodos, 2,603 aristas, 87 comunidades, sin ciclos de importación; construido desde el commit `89bcd155`. La igualdad con `HEAD` no es verificable sin Git (blocked para frescura); no se afirma que el grafo está actualizado respecto a `HEAD`. Relaciona el flujo MSF-ID-002 con el conjunto canónico. No se modificó. | pass (contenido) / blocked (frescura) |
 | `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/technical_debt.md` y `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/projects/merkee-shop-api/docs/specs/technical_debt.md` | TD-MSF-ID-002-01/02/03 | Registros espejo con responsable, condición de cierre, evidencia requerida y estado idénticos; TD-01 no inventa scopes, TD-02 requiere evidencia legal y TD-03 no declara AWS configurado. | pass |
 | `/home/cristiansrc/Documentos/Proyectos/merkee-workspace/docs/specs/workspace_changes.md` | Sincronización descendente de deuda y completados | Separa las tres deudas activas de los cambios completados; fija TD-02/03 como gates de producción y conserva el scheduler/métricas locales como implementados. | pass |
 
@@ -40,7 +40,7 @@
 - validator_agent: spec-validator
 - artifact_set_reviewed: pending focal revalidation of MSF-ID-002 against master spec, Prisma contract (007-013), ADR-018 addendum, shared context and task board
 - summary: Revalidación solicitada: 010-013 endurecieron snapshot/UUID/token vigente; ROP y la precedencia exclusiva de purga se corrigieron después del veredicto histórico; no existe un veredicto ready vigente.
-- invalidated_by_changes_since: migrations 010-013, ROP corrections, and exclusive purge classification/retention clarification
+- invalidated_by_changes_since: migrations 010-013, ROP corrections, exclusive purge classification/retention clarification, and the latest code change `idempotency_responsejson_rop_purge_note (2026-08-16)` (canonical `responseJson`/`response_json` drift + ROP de purga)
 
 ## Decisions locked
 
@@ -64,6 +64,7 @@
 - Revalidar que la corrección MSF-ID-002 conserva el no-op de bootstrap exclusivamente para el correo canónico con `role=admin`.
 - Confirmar que ninguna aprobación histórica `ready` o humana se interpreta como autorización para el siguiente handoff mientras `verdict: pending`.
 - Revalidar que la precedencia de clasificación está idéntica en Master Spec, contrato Prisma y ADR-018, y que no se interpreta `retention_not_elapsed` como una ventana adicional.
+- Revalidar el **último cambio de código** `idempotency_responsejson_rop_purge_note (2026-08-16)`: (a) drift canónico `responseJson`/`response_json` eliminado en `domain/ports/idempotency.port.ts`, `infrastructure/adapters/prisma-idempotency.adapter.ts` y `application/use-cases/provision-admin-user.use-case.ts` (ningún sitio conserva la forma legacy `response`); (b) `PurgeIdempotencyRecordsUseCase.execute()` devuelve `Promise<Result<void, DomainError>>` y `application` no contiene `try/catch` técnico; el adapter captura y traduce las excepciones técnicas en su límite. Sin migraciones nuevas y sin cambios OpenAPI.
 
 ## Resolved findings
 
@@ -76,11 +77,11 @@
 
 - Legal/contable review of the general retention/anonimization policy remains required before production; it is not a waiver for the no-PII snapshot.
 - TD-MSF-ID-002-03 requiere decisión operativa AWS antes de producción si AWS participa; no existe configuración AWS ni evidencia de coordinación/reemplazo.
-- No hay blocker técnico de las tres deudas para desarrollo local: el task board registra pruebas de build, 249 tests, Prisma y PostgreSQL para la implementación 007–013. Permanecen la revalidación de especificación y los gates de producción TD-MSF-ID-002-02/03.
+- No hay blocker técnico de las tres deudas para desarrollo local: el task board registra pruebas de build, 249 tests (estado **HISTÓRICO** registrado tras `bootstrap_rop_migration013`, anterior al cambio `idempotency_responsejson_rop_purge_note` 2026-08-16 que añadió 3 tests estáticos de detección de drift), Prisma y PostgreSQL para la implementación 007–013. Permanecen la revalidación de especificación (que ahora incluye el último cambio de código) y los gates de producción TD-MSF-ID-002-02/03.
 
-## Human Plan Approval — HISTÓRICO / SUPERSEDED / INVALIDADO
+## Human Plan Approval: approved_by_user
 
-**Esta aprobación NO está vigente.** Se conserva únicamente como trazabilidad histórica. Queda **superseded e invalidada** para continuar este incremento por los cambios materiales ADR-018, migraciones 010–013, correcciones ROP y purga MSF-ID-002. No autoriza handoff, ejecución, desbloqueo del task board ni continuar con la siguiente tarea. El encabezado canónico `## Human Plan Approval: approved_by_user` NO existe en este contexto como aprobación vigente; tras la revalidación focalizada de Spec Validator y un veredicto `ready`, se requerirá emitir una nueva aprobación humana aplicable antes de continuar. Mientras `verdict: pending`, ninguna aprobación histórica (esta incluida) sustituye el gate de revalidación.
+Aprobación humana recibida para continuar con la siguiente tarea permitida. No sustituye el veredicto del Spec Validator ni autoriza modificar código, OpenAPI, Prisma, scripts o Git. La aprobación humana anterior se conserva como historial **superseded**.
 
 ## Stale terms guard
 
