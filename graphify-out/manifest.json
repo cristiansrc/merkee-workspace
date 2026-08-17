@@ -1,0 +1,867 @@
+{
+  "projects/merkee-shop-api/.dependency-cruiser.cjs": {
+    "mtime": 1786846177.6219435,
+    "ast_hash": "274f81ec5c41c187f2e751884e3c7cb2",
+    "semantic_hash": "274f81ec5c41c187f2e751884e3c7cb2"
+  },
+  "projects/merkee-shop-api/nest-cli.json": {
+    "mtime": 1786832076.189245,
+    "ast_hash": "b6c9c4b64b7092bea720263a47b574cf",
+    "semantic_hash": "b6c9c4b64b7092bea720263a47b574cf"
+  },
+  "projects/merkee-shop-api/package.json": {
+    "mtime": 1786845142.8570898,
+    "ast_hash": "97199d2a922d95fe2ebcecaa6f035bec",
+    "semantic_hash": "97199d2a922d95fe2ebcecaa6f035bec"
+  },
+  "projects/merkee-shop-api/prisma/seed.ts": {
+    "mtime": 1786834110.696759,
+    "ast_hash": "2321f7b50d798957d14cd66cdfe6abdb",
+    "semantic_hash": "2321f7b50d798957d14cd66cdfe6abdb"
+  },
+  "projects/merkee-shop-api/scripts/integration-msf-id-002.ts": {
+    "mtime": 1786848371.8551278,
+    "ast_hash": "71b8f2b924205fc38d0e614b65c6c531",
+    "semantic_hash": "71b8f2b924205fc38d0e614b65c6c531"
+  },
+  "projects/merkee-shop-api/scripts/integration-purge-msf-id-002.ts": {
+    "mtime": 1786907042.3988688,
+    "ast_hash": "4f863492d1d93ee1b9d9a474d7df3b8a",
+    "semantic_hash": "4f863492d1d93ee1b9d9a474d7df3b8a"
+  },
+  "projects/merkee-shop-api/src/app.module.spec.ts": {
+    "mtime": 1786832212.403745,
+    "ast_hash": "dc47989ec672709b683f93c057904d40",
+    "semantic_hash": "dc47989ec672709b683f93c057904d40"
+  },
+  "projects/merkee-shop-api/src/app.module.ts": {
+    "mtime": 1786832524.871044,
+    "ast_hash": "2c0d2cb19f7e26cd413edd9059373998",
+    "semantic_hash": "2c0d2cb19f7e26cd413edd9059373998"
+  },
+  "projects/merkee-shop-api/src/contract/application/dto.ts": {
+    "mtime": 1786832782.3068554,
+    "ast_hash": "b8c50680b1e66ccfe5c2e4786523b7c2",
+    "semantic_hash": "b8c50680b1e66ccfe5c2e4786523b7c2"
+  },
+  "projects/merkee-shop-api/src/contract/index.ts": {
+    "mtime": 1786832865.8766093,
+    "ast_hash": "3d5ea976cbee80057da4b00cfd3546ca",
+    "semantic_hash": "3d5ea976cbee80057da4b00cfd3546ca"
+  },
+  "projects/merkee-shop-api/src/contract/operation-map.spec.ts": {
+    "mtime": 1786832916.168792,
+    "ast_hash": "2f255121939a50f1320933098ab88deb",
+    "semantic_hash": "2f255121939a50f1320933098ab88deb"
+  },
+  "projects/merkee-shop-api/src/contract/operation-map.ts": {
+    "mtime": 1786832861.8345902,
+    "ast_hash": "17564c6b7c53d00cf4d49835161a9dca",
+    "semantic_hash": "17564c6b7c53d00cf4d49835161a9dca"
+  },
+  "projects/merkee-shop-api/src/contract/parameters.ts": {
+    "mtime": 1786832773.1631734,
+    "ast_hash": "cadc11923e1ab4e9fc86d52d56ce219d",
+    "semantic_hash": "cadc11923e1ab4e9fc86d52d56ce219d"
+  },
+  "projects/merkee-shop-api/src/contract/schemas.spec.ts": {
+    "mtime": 1786832932.945928,
+    "ast_hash": "6c87a51c3c178bbef356da75436deb7c",
+    "semantic_hash": "6c87a51c3c178bbef356da75436deb7c"
+  },
+  "projects/merkee-shop-api/src/contract/schemas.ts": {
+    "mtime": 1786847606.3049212,
+    "ast_hash": "64d5a08f472e749334fec5e637d61153",
+    "semantic_hash": "64d5a08f472e749334fec5e637d61153"
+  },
+  "projects/merkee-shop-api/src/contract/validation/header-validators.spec.ts": {
+    "mtime": 1786832907.5698073,
+    "ast_hash": "269a2e32881c247ae82e733266318170",
+    "semantic_hash": "269a2e32881c247ae82e733266318170"
+  },
+  "projects/merkee-shop-api/src/contract/validation/header-validators.ts": {
+    "mtime": 1786832835.8504674,
+    "ast_hash": "08ef6e271e9a211713a9233867f0a985",
+    "semantic_hash": "08ef6e271e9a211713a9233867f0a985"
+  },
+  "projects/merkee-shop-api/src/contract/validation/request-validators.spec.ts": {
+    "mtime": 1786832935.3689399,
+    "ast_hash": "d92b34d08b21a1220cb1e532179461ef",
+    "semantic_hash": "d92b34d08b21a1220cb1e532179461ef"
+  },
+  "projects/merkee-shop-api/src/contract/validation/request-validators.ts": {
+    "mtime": 1786832824.6864147,
+    "ast_hash": "c1cd8fea23c98c9e5c24f13385e6c210",
+    "semantic_hash": "c1cd8fea23c98c9e5c24f13385e6c210"
+  },
+  "projects/merkee-shop-api/src/contract/validation/validators.ts": {
+    "mtime": 1786832828.8974347,
+    "ast_hash": "925c0eb28aceb49cafbb298c8241ca7e",
+    "semantic_hash": "925c0eb28aceb49cafbb298c8241ca7e"
+  },
+  "projects/merkee-shop-api/src/main.ts": {
+    "mtime": 1786832104.7373455,
+    "ast_hash": "c39ec4ecb1d15f6ce81798ee2cdd332f",
+    "semantic_hash": "c39ec4ecb1d15f6ce81798ee2cdd332f"
+  },
+  "projects/merkee-shop-api/src/modules/admin-query/admin-query.controller.ts": {
+    "mtime": 1786832196.6806846,
+    "ast_hash": "e2eba299b2c3e6c8c6ec1b0142e665ac",
+    "semantic_hash": "e2eba299b2c3e6c8c6ec1b0142e665ac"
+  },
+  "projects/merkee-shop-api/src/modules/admin-query/admin-query.module.ts": {
+    "mtime": 1786832196.286443,
+    "ast_hash": "c016aa14328120cad3f83daefba660c2",
+    "semantic_hash": "c016aa14328120cad3f83daefba660c2"
+  },
+  "projects/merkee-shop-api/src/modules/admin-query/application/use-cases/list-admin-orders.use-case.ts": {
+    "mtime": 1786832200.212698,
+    "ast_hash": "8f554abe0d44095a781768a21f79f7a2",
+    "semantic_hash": "8f554abe0d44095a781768a21f79f7a2"
+  },
+  "projects/merkee-shop-api/src/modules/admin-query/domain/ports/order-query.port.ts": {
+    "mtime": 1786832198.1196902,
+    "ast_hash": "901b366820022356787a3e135bdf413b",
+    "semantic_hash": "901b366820022356787a3e135bdf413b"
+  },
+  "projects/merkee-shop-api/src/modules/admin-query/infrastructure/adapters/order-query.adapter.ts": {
+    "mtime": 1786832201.712704,
+    "ast_hash": "4c9626e4ad359dd388bba592fa3a3a27",
+    "semantic_hash": "4c9626e4ad359dd388bba592fa3a3a27"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/application/use-cases/add-cart-item.use-case.ts": {
+    "mtime": 1786832153.2122993,
+    "ast_hash": "a37aa4c9dc242f4b4ba7163465cc14e7",
+    "semantic_hash": "a37aa4c9dc242f4b4ba7163465cc14e7"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/cart-reservation.controller.ts": {
+    "mtime": 1786832146.4864967,
+    "ast_hash": "cd817aad797334771b6957c01c94cc00",
+    "semantic_hash": "cd817aad797334771b6957c01c94cc00"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/cart-reservation.module.ts": {
+    "mtime": 1786832145.3486044,
+    "ast_hash": "aa6701eef1f05d6c80e4e888b5cd8971",
+    "semantic_hash": "aa6701eef1f05d6c80e4e888b5cd8971"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/domain/ports/cart-repository.port.ts": {
+    "mtime": 1786832150.2025104,
+    "ast_hash": "7a0db0eb865ad1cdb6aab676ccf9858a",
+    "semantic_hash": "7a0db0eb865ad1cdb6aab676ccf9858a"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/domain/ports/clock.port.ts": {
+    "mtime": 1786832151.2195141,
+    "ast_hash": "427bd37a1899f50ce3ae4e9910735def",
+    "semantic_hash": "427bd37a1899f50ce3ae4e9910735def"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/domain/ports/inventory-reservation.port.ts": {
+    "mtime": 1786832148.3803573,
+    "ast_hash": "ba7a95a1a5af9b66bbf3517087c2cae2",
+    "semantic_hash": "ba7a95a1a5af9b66bbf3517087c2cae2"
+  },
+  "projects/merkee-shop-api/src/modules/cart-reservation/infrastructure/adapters/inventory-reservation.adapter.ts": {
+    "mtime": 1786832155.0805283,
+    "ast_hash": "158d96b3746e49dfac9854a7f25dc14e",
+    "semantic_hash": "158d96b3746e49dfac9854a7f25dc14e"
+  },
+  "projects/merkee-shop-api/src/modules/catalog/application/use-cases/list-products.use-case.ts": {
+    "mtime": 1786832139.9594727,
+    "ast_hash": "7393faab510e983f0fec9d5a1685d53c",
+    "semantic_hash": "7393faab510e983f0fec9d5a1685d53c"
+  },
+  "projects/merkee-shop-api/src/modules/catalog/catalog.controller.ts": {
+    "mtime": 1786832134.3964522,
+    "ast_hash": "22317166eb50f27220d3f866f2761c2d",
+    "semantic_hash": "22317166eb50f27220d3f866f2761c2d"
+  },
+  "projects/merkee-shop-api/src/modules/catalog/catalog.module.ts": {
+    "mtime": 1786832133.332725,
+    "ast_hash": "bac4d45664973d6c0530e65b9c04e79b",
+    "semantic_hash": "bac4d45664973d6c0530e65b9c04e79b"
+  },
+  "projects/merkee-shop-api/src/modules/catalog/domain/ports/category-repository.port.ts": {
+    "mtime": 1786832137.7374644,
+    "ast_hash": "e25106b753ddd9f9f825238e7a5cf8cf",
+    "semantic_hash": "e25106b753ddd9f9f825238e7a5cf8cf"
+  },
+  "projects/merkee-shop-api/src/modules/catalog/domain/ports/product-repository.port.ts": {
+    "mtime": 1786832136.4534693,
+    "ast_hash": "587637d20075c1ba4195eb3d4f74b8e2",
+    "semantic_hash": "587637d20075c1ba4195eb3d4f74b8e2"
+  },
+  "projects/merkee-shop-api/src/modules/catalog/infrastructure/adapters/product-repository.adapter.ts": {
+    "mtime": 1786832141.68833,
+    "ast_hash": "f56972f4c1b694d1e21192c132e80bc6",
+    "semantic_hash": "f56972f4c1b694d1e21192c132e80bc6"
+  },
+  "projects/merkee-shop-api/src/modules/checkout/application/use-cases/create-checkout.use-case.ts": {
+    "mtime": 1786832189.7182152,
+    "ast_hash": "bc168eaa90c3d07dce6506b79f82958c",
+    "semantic_hash": "bc168eaa90c3d07dce6506b79f82958c"
+  },
+  "projects/merkee-shop-api/src/modules/checkout/checkout.controller.ts": {
+    "mtime": 1786832186.1836448,
+    "ast_hash": "d5366b794a4f3d4d413d95c468f488ce",
+    "semantic_hash": "d5366b794a4f3d4d413d95c468f488ce"
+  },
+  "projects/merkee-shop-api/src/modules/checkout/checkout.module.ts": {
+    "mtime": 1786832184.94564,
+    "ast_hash": "0c51730a2d108a70920df9f5437560f0",
+    "semantic_hash": "0c51730a2d108a70920df9f5437560f0"
+  },
+  "projects/merkee-shop-api/src/modules/checkout/domain/ports/checkout-reservation.port.ts": {
+    "mtime": 1786832187.4426496,
+    "ast_hash": "d686989cc35f3311ccd887ddf696ba89",
+    "semantic_hash": "d686989cc35f3311ccd887ddf696ba89"
+  },
+  "projects/merkee-shop-api/src/modules/checkout/infrastructure/adapters/checkout-reservation.adapter.ts": {
+    "mtime": 1786832191.278664,
+    "ast_hash": "69fe0c3617c64f64b6412082d6929e58",
+    "semantic_hash": "69fe0c3617c64f64b6412082d6929e58"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/activate-admin.use-case.spec.ts": {
+    "mtime": 1786846228.122215,
+    "ast_hash": "41b2859a3f2fbeb5d33f0f52ef87608b",
+    "semantic_hash": "41b2859a3f2fbeb5d33f0f52ef87608b"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/activate-admin.use-case.ts": {
+    "mtime": 1786846076.4934084,
+    "ast_hash": "b888de95e824c85b477d8af335f32b88",
+    "semantic_hash": "b888de95e824c85b477d8af335f32b88"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/bootstrap-initial-admin.use-case.spec.ts": {
+    "mtime": 1786907570.527628,
+    "ast_hash": "2e7b9e435953dcb5e56f2923c27fa201",
+    "semantic_hash": "2e7b9e435953dcb5e56f2923c27fa201"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/bootstrap-initial-admin.use-case.ts": {
+    "mtime": 1786907538.8550553,
+    "ast_hash": "7f4dfa99e2843fbdeb5cb3eccf8c0f04",
+    "semantic_hash": "7f4dfa99e2843fbdeb5cb3eccf8c0f04"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/login.use-case.spec.ts": {
+    "mtime": 1786838146.616146,
+    "ast_hash": "49fb504019e634ef24a0b2529a2dfc70",
+    "semantic_hash": "49fb504019e634ef24a0b2529a2dfc70"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/login.use-case.ts": {
+    "mtime": 1786846026.7401502,
+    "ast_hash": "4fca693546a839f4449e84b0368a2522",
+    "semantic_hash": "4fca693546a839f4449e84b0368a2522"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/logout.use-case.spec.ts": {
+    "mtime": 1786838200.5854905,
+    "ast_hash": "9df71ac4319fc4738ac718e0dcd11d8a",
+    "semantic_hash": "9df71ac4319fc4738ac718e0dcd11d8a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/logout.use-case.ts": {
+    "mtime": 1786846063.5413408,
+    "ast_hash": "1d6c3f06090893f21b544e999aa437b5",
+    "semantic_hash": "1d6c3f06090893f21b544e999aa437b5"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/provision-admin-user.use-case.spec.ts": {
+    "mtime": 1786848271.1195579,
+    "ast_hash": "25be719d2c29e7de68754fd2edf14e2e",
+    "semantic_hash": "25be719d2c29e7de68754fd2edf14e2e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/provision-admin-user.use-case.ts": {
+    "mtime": 1786848111.547662,
+    "ast_hash": "328e59021fbc04ddf43c26f4035a1ea2",
+    "semantic_hash": "328e59021fbc04ddf43c26f4035a1ea2"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/purge-idempotency-records.use-case.spec.ts": {
+    "mtime": 1786906923.9072502,
+    "ast_hash": "9ef2380e6c79d91de564a05e33a6ac0a",
+    "semantic_hash": "9ef2380e6c79d91de564a05e33a6ac0a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/purge-idempotency-records.use-case.ts": {
+    "mtime": 1786906848.9963286,
+    "ast_hash": "4ddfa638f36e94a75ffe1cf17da0c92c",
+    "semantic_hash": "4ddfa638f36e94a75ffe1cf17da0c92c"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/refresh-session.use-case.spec.ts": {
+    "mtime": 1786838161.3852408,
+    "ast_hash": "9ea0410ba03e8c6e58037a719f0ea8c6",
+    "semantic_hash": "9ea0410ba03e8c6e58037a719f0ea8c6"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/refresh-session.use-case.ts": {
+    "mtime": 1786846053.8422904,
+    "ast_hash": "a8e8fe40dc078e34538d0aebbab1af0e",
+    "semantic_hash": "a8e8fe40dc078e34538d0aebbab1af0e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/register.use-case.spec.ts": {
+    "mtime": 1786838124.008,
+    "ast_hash": "ea77f87daa2a7cd78dd7677830086b1b",
+    "semantic_hash": "ea77f87daa2a7cd78dd7677830086b1b"
+  },
+  "projects/merkee-shop-api/src/modules/identity/application/use-cases/register.use-case.ts": {
+    "mtime": 1786846018.6721087,
+    "ast_hash": "74899c7a7591afcd1e7faa9538682cde",
+    "semantic_hash": "74899c7a7591afcd1e7faa9538682cde"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/idempotency-scope.ts": {
+    "mtime": 1786841819.4688878,
+    "ast_hash": "fe9acf4031e039749f79303c43eced54",
+    "semantic_hash": "fe9acf4031e039749f79303c43eced54"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/identity-errors.spec.ts": {
+    "mtime": 1786844113.4243565,
+    "ast_hash": "449967c42cb6ed7b43d11180dfd0c016",
+    "semantic_hash": "449967c42cb6ed7b43d11180dfd0c016"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/identity-errors.ts": {
+    "mtime": 1786845975.1358862,
+    "ast_hash": "7bb93f36fb5e12981217b0ca0284a9d7",
+    "semantic_hash": "7bb93f36fb5e12981217b0ca0284a9d7"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/models/admin-activation-token.ts": {
+    "mtime": 1786837178.5488632,
+    "ast_hash": "c492777757ef60893307c50b9818a5fe",
+    "semantic_hash": "c492777757ef60893307c50b9818a5fe"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/models/index.ts": {
+    "mtime": 1786837269.1443076,
+    "ast_hash": "1b87476f01697562fe63157626b913bf",
+    "semantic_hash": "1b87476f01697562fe63157626b913bf"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/models/session.ts": {
+    "mtime": 1786835607.996924,
+    "ast_hash": "7b16fa465d75feec141661733f7fad39",
+    "semantic_hash": "7b16fa465d75feec141661733f7fad39"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/models/user.ts": {
+    "mtime": 1786837285.5803885,
+    "ast_hash": "77d3aa135492eb7bcd1945cfd8dbecb8",
+    "semantic_hash": "77d3aa135492eb7bcd1945cfd8dbecb8"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/activate-admin-unit-of-work.port.ts": {
+    "mtime": 1786843774.9173903,
+    "ast_hash": "43ab6e70e7f96373e5d0e7c0591fc5f4",
+    "semantic_hash": "43ab6e70e7f96373e5d0e7c0591fc5f4"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/admin-activation-token-repository.port.ts": {
+    "mtime": 1786845966.8488443,
+    "ast_hash": "36afd0926a3948aa44171d6e46da320c",
+    "semantic_hash": "36afd0926a3948aa44171d6e46da320c"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/bootstrap-unit-of-work.port.ts": {
+    "mtime": 1786907510.3265433,
+    "ast_hash": "3a7ab058c7bc8cd331e82c6a2a61f51e",
+    "semantic_hash": "3a7ab058c7bc8cd331e82c6a2a61f51e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/cart-reservation.port.ts": {
+    "mtime": 1786835628.4720387,
+    "ast_hash": "4ff80387a096165b4c7122cafcbed912",
+    "semantic_hash": "4ff80387a096165b4c7122cafcbed912"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/clock.port.ts": {
+    "mtime": 1786832115.814385,
+    "ast_hash": "ff6b1701900c6c63fb715777906a5b82",
+    "semantic_hash": "ff6b1701900c6c63fb715777906a5b82"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/cookie-token.port.ts": {
+    "mtime": 1786835625.11802,
+    "ast_hash": "15770916f016e743d7952e813891524c",
+    "semantic_hash": "15770916f016e743d7952e813891524c"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/idempotency-purge-repository.port.ts": {
+    "mtime": 1786906840.3302276,
+    "ast_hash": "cb8a6226f6e81b3c237a75f8815f02d8",
+    "semantic_hash": "cb8a6226f6e81b3c237a75f8815f02d8"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/idempotency-scope-evaluator.port.ts": {
+    "mtime": 1786841874.4101632,
+    "ast_hash": "336b49b6e1ceff68bd5091e188f85755",
+    "semantic_hash": "336b49b6e1ceff68bd5091e188f85755"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/idempotency.port.ts": {
+    "mtime": 1786841814.2278614,
+    "ast_hash": "a1855ff957e243408914e9de0ff7e824",
+    "semantic_hash": "a1855ff957e243408914e9de0ff7e824"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/initial-admin-secret.port.ts": {
+    "mtime": 1786843441.6776614,
+    "ast_hash": "41c708981bde3ef16bc8cd132813d5d4",
+    "semantic_hash": "41c708981bde3ef16bc8cd132813d5d4"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/jwt.port.ts": {
+    "mtime": 1786835622.4180048,
+    "ast_hash": "8798450518c51ec688d434b478fa96e5",
+    "semantic_hash": "8798450518c51ec688d434b478fa96e5"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/password-hasher.port.ts": {
+    "mtime": 1786832114.683381,
+    "ast_hash": "d711bbbad7902a390b30073ff253672e",
+    "semantic_hash": "d711bbbad7902a390b30073ff253672e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/provision-unit-of-work.port.ts": {
+    "mtime": 1786848070.3884325,
+    "ast_hash": "309c91aa1081f2303aaf4c097a562fd7",
+    "semantic_hash": "309c91aa1081f2303aaf4c097a562fd7"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/purge-logger.port.ts": {
+    "mtime": 1786841869.80814,
+    "ast_hash": "5743b413d024134ab1a50e85a68f27a9",
+    "semantic_hash": "5743b413d024134ab1a50e85a68f27a9"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/purge-metrics.port.ts": {
+    "mtime": 1786841865.3111174,
+    "ast_hash": "a02b386dfd270905b222243c5d51a1e6",
+    "semantic_hash": "a02b386dfd270905b222243c5d51a1e6"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/session-repository.port.ts": {
+    "mtime": 1786837472.691314,
+    "ast_hash": "ca94db4e3ec53499b9cacde638607c2e",
+    "semantic_hash": "ca94db4e3ec53499b9cacde638607c2e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/domain/ports/user-repository.port.ts": {
+    "mtime": 1786837460.610254,
+    "ast_hash": "b3c49dcd0115cb7082bcadc594d390bf",
+    "semantic_hash": "b3c49dcd0115cb7082bcadc594d390bf"
+  },
+  "projects/merkee-shop-api/src/modules/identity/identity.controller.ts": {
+    "mtime": 1786837864.0722697,
+    "ast_hash": "ffe2ccae182252d992f366bf8f2248b1",
+    "semantic_hash": "ffe2ccae182252d992f366bf8f2248b1"
+  },
+  "projects/merkee-shop-api/src/modules/identity/identity.module.ts": {
+    "mtime": 1786907542.717125,
+    "ast_hash": "70a6500ca9ac98116123120630d63efc",
+    "semantic_hash": "70a6500ca9ac98116123120630d63efc"
+  },
+  "projects/merkee-shop-api/src/modules/identity/identity.tokens.ts": {
+    "mtime": 1786845213.7825315,
+    "ast_hash": "68100edb3ac5df89d6fe4a1fd18afca6",
+    "semantic_hash": "68100edb3ac5df89d6fe4a1fd18afca6"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/admin-provision-scope-evaluator.adapter.spec.ts": {
+    "mtime": 1786846434.8433518,
+    "ast_hash": "211315c4f5306cacf5199a4057af23ec",
+    "semantic_hash": "211315c4f5306cacf5199a4057af23ec"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/admin-provision-scope-evaluator.adapter.ts": {
+    "mtime": 1786846416.211248,
+    "ast_hash": "3460d42709207d123f982f6a77305221",
+    "semantic_hash": "3460d42709207d123f982f6a77305221"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/argon2-password-hasher.adapter.spec.ts": {
+    "mtime": 1786843514.0401788,
+    "ast_hash": "c1ef1a53d03e4b893ccdd8847060895c",
+    "semantic_hash": "c1ef1a53d03e4b893ccdd8847060895c"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/argon2-password-hasher.adapter.ts": {
+    "mtime": 1786835819.1661057,
+    "ast_hash": "fbc38b9d832a5857cacecf0a1b9cb8f6",
+    "semantic_hash": "fbc38b9d832a5857cacecf0a1b9cb8f6"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/bootstrap-initial-admin-on-startup.spec.ts": {
+    "mtime": 1786844095.5442393,
+    "ast_hash": "8e8ed70b32409f9317aa51c85f35660a",
+    "semantic_hash": "8e8ed70b32409f9317aa51c85f35660a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/bootstrap-initial-admin-on-startup.ts": {
+    "mtime": 1786843529.8563764,
+    "ast_hash": "f936b16c93982955dbf81dfbff677d29",
+    "semantic_hash": "f936b16c93982955dbf81dfbff677d29"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/console-purge-logger.adapter.ts": {
+    "mtime": 1786841926.765426,
+    "ast_hash": "6e44cf193f3751c7eb9a5167b24911b3",
+    "semantic_hash": "6e44cf193f3751c7eb9a5167b24911b3"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/cookie-token.adapter.ts": {
+    "mtime": 1786835719.4685488,
+    "ast_hash": "8e52153d3a0f94f32fd2bf31f34fdf71",
+    "semantic_hash": "8e52153d3a0f94f32fd2bf31f34fdf71"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/env-initial-admin-secret.adapter.spec.ts": {
+    "mtime": 1786843509.4061344,
+    "ast_hash": "fe91ca8fadb519948906f02ffb1d6809",
+    "semantic_hash": "fe91ca8fadb519948906f02ffb1d6809"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/env-initial-admin-secret.adapter.ts": {
+    "mtime": 1786843448.1917121,
+    "ast_hash": "a59b04fa2825bcbaf29508d0db6a1e11",
+    "semantic_hash": "a59b04fa2825bcbaf29508d0db6a1e11"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/idempotency-response-rename.spec.ts": {
+    "mtime": 1786907623.3335917,
+    "ast_hash": "9e2131280ea833c9badfe47832070e41",
+    "semantic_hash": "9e2131280ea833c9badfe47832070e41"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/identity-module-wiring.spec.ts": {
+    "mtime": 1786845315.6151311,
+    "ast_hash": "ec971d871edebaf25863425b127d37db",
+    "semantic_hash": "ec971d871edebaf25863425b127d37db"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/in-memory-purge-metrics.adapter.spec.ts": {
+    "mtime": 1786844496.9353435,
+    "ast_hash": "c8d9f976c93ef5339da524ad5fd28651",
+    "semantic_hash": "c8d9f976c93ef5339da524ad5fd28651"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/in-memory-purge-metrics.adapter.ts": {
+    "mtime": 1786844354.3697183,
+    "ast_hash": "8e5f9cbd1de95399fe4a0ea146c829e5",
+    "semantic_hash": "8e5f9cbd1de95399fe4a0ea146c829e5"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/jwt.adapter.ts": {
+    "mtime": 1786835716.4435318,
+    "ast_hash": "cedd8095be7d159f4e659df24b1f1f59",
+    "semantic_hash": "cedd8095be7d159f4e659df24b1f1f59"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/noop-cart-reservation.adapter.ts": {
+    "mtime": 1786835725.6685834,
+    "ast_hash": "9ce4fc41fe43f51677737f7fb54de0ec",
+    "semantic_hash": "9ce4fc41fe43f51677737f7fb54de0ec"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-activate-admin-unit-of-work.adapter.spec.ts": {
+    "mtime": 1786843826.9186265,
+    "ast_hash": "2fb23e9c21263f2733c28c4293059142",
+    "semantic_hash": "2fb23e9c21263f2733c28c4293059142"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-activate-admin-unit-of-work.adapter.ts": {
+    "mtime": 1786843783.8904276,
+    "ast_hash": "685708d121d57742bb1f76fc3e634387",
+    "semantic_hash": "685708d121d57742bb1f76fc3e634387"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-admin-activation-token-repository.adapter.ts": {
+    "mtime": 1786845971.0588655,
+    "ast_hash": "4a3a8810f50076573e1895a7db1ada9e",
+    "semantic_hash": "4a3a8810f50076573e1895a7db1ada9e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-bootstrap-unit-of-work.adapter.spec.ts": {
+    "mtime": 1786907580.6148112,
+    "ast_hash": "6bba1611e7c080327919de4641be5ce7",
+    "semantic_hash": "6bba1611e7c080327919de4641be5ce7"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-bootstrap-unit-of-work.adapter.ts": {
+    "mtime": 1786907517.683675,
+    "ast_hash": "1ec3f35e2f7b64e8e98522bdcb31af1a",
+    "semantic_hash": "1ec3f35e2f7b64e8e98522bdcb31af1a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-idempotency-purge-repository.adapter.spec.ts": {
+    "mtime": 1786906989.274121,
+    "ast_hash": "f0549cb277371b82289dfc028230bf58",
+    "semantic_hash": "f0549cb277371b82289dfc028230bf58"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-idempotency-purge-repository.adapter.ts": {
+    "mtime": 1786906880.8417096,
+    "ast_hash": "79f88b741c3fc84020b8f7fef97c1e5d",
+    "semantic_hash": "79f88b741c3fc84020b8f7fef97c1e5d"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-idempotency.adapter.ts": {
+    "mtime": 1786846202.9760795,
+    "ast_hash": "d480669c09493d4e9f2a3103e4bd686a",
+    "semantic_hash": "d480669c09493d4e9f2a3103e4bd686a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-provision-unit-of-work.adapter.spec.ts": {
+    "mtime": 1786848180.9640505,
+    "ast_hash": "30dca4e0361ab4442bf8c1235e04e3a0",
+    "semantic_hash": "30dca4e0361ab4442bf8c1235e04e3a0"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-provision-unit-of-work.adapter.ts": {
+    "mtime": 1786848088.062531,
+    "ast_hash": "fc967add000a85455b5fdcb5654ad57d",
+    "semantic_hash": "fc967add000a85455b5fdcb5654ad57d"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-session-repository.adapter.ts": {
+    "mtime": 1786843779.4254088,
+    "ast_hash": "c0a60b225a663a70297e42ab071e4dd8",
+    "semantic_hash": "c0a60b225a663a70297e42ab071e4dd8"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prisma-user-repository.adapter.ts": {
+    "mtime": 1786842045.6070237,
+    "ast_hash": "8eaf3fdc9b8e3ea7cb74ba0add71f37e",
+    "semantic_hash": "8eaf3fdc9b8e3ea7cb74ba0add71f37e"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prometheus-purge-metrics.adapter.spec.ts": {
+    "mtime": 1786845311.0411184,
+    "ast_hash": "50e8589addc99886c1574f2a586b1b0a",
+    "semantic_hash": "50e8589addc99886c1574f2a586b1b0a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/prometheus-purge-metrics.adapter.ts": {
+    "mtime": 1786845352.9042401,
+    "ast_hash": "ada176e1b6cf8e4cbec378115817e8a4",
+    "semantic_hash": "ada176e1b6cf8e4cbec378115817e8a4"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/scheduled-idempotency-purge.adapter.spec.ts": {
+    "mtime": 1786845258.9708138,
+    "ast_hash": "ced99873a49d8815f4a574df34d9bf56",
+    "semantic_hash": "ced99873a49d8815f4a574df34d9bf56"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/scheduled-idempotency-purge.adapter.ts": {
+    "mtime": 1786845209.9385076,
+    "ast_hash": "0f7aa3354743a6453572a8caff2ab15b",
+    "semantic_hash": "0f7aa3354743a6453572a8caff2ab15b"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/adapters/system-clock.adapter.ts": {
+    "mtime": 1786835721.6005607,
+    "ast_hash": "7881d1e685f27943c6a618b2da7b6f7a",
+    "semantic_hash": "7881d1e685f27943c6a618b2da7b6f7a"
+  },
+  "projects/merkee-shop-api/src/modules/identity/infrastructure/prisma.service.ts": {
+    "mtime": 1786835689.7823825,
+    "ast_hash": "948e42f1b21260829af1d38f3bd52f39",
+    "semantic_hash": "948e42f1b21260829af1d38f3bd52f39"
+  },
+  "projects/merkee-shop-api/src/modules/media/application/use-cases/create-upload-url.use-case.ts": {
+    "mtime": 1786832128.1054294,
+    "ast_hash": "79bc4ce35ce5b79993fee1a138e42f27",
+    "semantic_hash": "79bc4ce35ce5b79993fee1a138e42f27"
+  },
+  "projects/merkee-shop-api/src/modules/media/domain/ports/media-storage.port.ts": {
+    "mtime": 1786832126.2574227,
+    "ast_hash": "f757e45c3180b10ebb001166b2e4b2a7",
+    "semantic_hash": "f757e45c3180b10ebb001166b2e4b2a7"
+  },
+  "projects/merkee-shop-api/src/modules/media/infrastructure/adapters/media-storage.adapter.ts": {
+    "mtime": 1786832129.7955213,
+    "ast_hash": "bca3d745fa094af95216781d1fbb2209",
+    "semantic_hash": "bca3d745fa094af95216781d1fbb2209"
+  },
+  "projects/merkee-shop-api/src/modules/media/media.controller.ts": {
+    "mtime": 1786832124.626417,
+    "ast_hash": "d2e64affaaac53015be3541d1c48603d",
+    "semantic_hash": "d2e64affaaac53015be3541d1c48603d"
+  },
+  "projects/merkee-shop-api/src/modules/media/media.module.ts": {
+    "mtime": 1786832123.2564175,
+    "ast_hash": "4a672be7d7a9a587a3b0394d841d915a",
+    "semantic_hash": "4a672be7d7a9a587a3b0394d841d915a"
+  },
+  "projects/merkee-shop-api/src/modules/orders/application/use-cases/list-orders.use-case.ts": {
+    "mtime": 1786832166.1025693,
+    "ast_hash": "beae3ca73705a79a375f5df3a71700fc",
+    "semantic_hash": "beae3ca73705a79a375f5df3a71700fc"
+  },
+  "projects/merkee-shop-api/src/modules/orders/domain/ports/order-repository.port.ts": {
+    "mtime": 1786832164.0955617,
+    "ast_hash": "5bd149c499280d389147e824da120fd3",
+    "semantic_hash": "5bd149c499280d389147e824da120fd3"
+  },
+  "projects/merkee-shop-api/src/modules/orders/infrastructure/adapters/order-repository.adapter.ts": {
+    "mtime": 1786832167.8011582,
+    "ast_hash": "07cba765c31cc8536f571583d7b7826e",
+    "semantic_hash": "07cba765c31cc8536f571583d7b7826e"
+  },
+  "projects/merkee-shop-api/src/modules/orders/orders.controller.ts": {
+    "mtime": 1786832162.3735554,
+    "ast_hash": "487ba327ea9a0565a53bc870070513cf",
+    "semantic_hash": "487ba327ea9a0565a53bc870070513cf"
+  },
+  "projects/merkee-shop-api/src/modules/orders/orders.module.ts": {
+    "mtime": 1786832160.9476604,
+    "ast_hash": "0b5415f1dd99d88ecb5dfa6f74a3dcf9",
+    "semantic_hash": "0b5415f1dd99d88ecb5dfa6f74a3dcf9"
+  },
+  "projects/merkee-shop-api/src/modules/payments/application/use-cases/create-payment.use-case.ts": {
+    "mtime": 1786832179.090618,
+    "ast_hash": "f65f6de12baa294b3cacef3af2792182",
+    "semantic_hash": "f65f6de12baa294b3cacef3af2792182"
+  },
+  "projects/merkee-shop-api/src/modules/payments/domain/ports/payment-provider.port.ts": {
+    "mtime": 1786832175.918606,
+    "ast_hash": "07cdc493f6b55e0c2f3220a0223bbd18",
+    "semantic_hash": "07cdc493f6b55e0c2f3220a0223bbd18"
+  },
+  "projects/merkee-shop-api/src/modules/payments/domain/ports/payment-repository.port.ts": {
+    "mtime": 1786832177.4426117,
+    "ast_hash": "472d6d878be7262bae0936490c3c76d8",
+    "semantic_hash": "472d6d878be7262bae0936490c3c76d8"
+  },
+  "projects/merkee-shop-api/src/modules/payments/infrastructure/adapters/payment-provider.adapter.ts": {
+    "mtime": 1786832180.8616247,
+    "ast_hash": "9a6459012cc5e3748b3933d6002707c5",
+    "semantic_hash": "9a6459012cc5e3748b3933d6002707c5"
+  },
+  "projects/merkee-shop-api/src/modules/payments/payments.controller.ts": {
+    "mtime": 1786832173.1625957,
+    "ast_hash": "948ba28a9448b905391545f66b77054d",
+    "semantic_hash": "948ba28a9448b905391545f66b77054d"
+  },
+  "projects/merkee-shop-api/src/modules/payments/payments.module.ts": {
+    "mtime": 1786832172.024236,
+    "ast_hash": "400430452048d90baa19aa917a8b06d0",
+    "semantic_hash": "400430452048d90baa19aa917a8b06d0"
+  },
+  "projects/merkee-shop-api/src/shared/domain/domain-error.spec.ts": {
+    "mtime": 1786832211.2717404,
+    "ast_hash": "b428e7bd4c0796d72fd58af4e8e0025c",
+    "semantic_hash": "b428e7bd4c0796d72fd58af4e8e0025c"
+  },
+  "projects/merkee-shop-api/src/shared/domain/domain-error.ts": {
+    "mtime": 1786832098.961325,
+    "ast_hash": "2a6951a1a278db4fa3529e3021055636",
+    "semantic_hash": "2a6951a1a278db4fa3529e3021055636"
+  },
+  "projects/merkee-shop-api/src/shared/domain/result.spec.ts": {
+    "mtime": 1786832208.4967299,
+    "ast_hash": "0de3469da56e94664192c42956311875",
+    "semantic_hash": "0de3469da56e94664192c42956311875"
+  },
+  "projects/merkee-shop-api/src/shared/domain/result.ts": {
+    "mtime": 1786832090.1732938,
+    "ast_hash": "c3516a2af096e7db150856b9706de277",
+    "semantic_hash": "c3516a2af096e7db150856b9706de277"
+  },
+  "projects/merkee-shop-api/src/shared/http/api-error-response.ts": {
+    "mtime": 1786832455.171445,
+    "ast_hash": "17b8c540d336ff4a11fc489315bfb47f",
+    "semantic_hash": "17b8c540d336ff4a11fc489315bfb47f"
+  },
+  "projects/merkee-shop-api/src/shared/http/domain-error-mapper.spec.ts": {
+    "mtime": 1786832537.2920988,
+    "ast_hash": "b979fb6c89dcae338999df4c9debe667",
+    "semantic_hash": "b979fb6c89dcae338999df4c9debe667"
+  },
+  "projects/merkee-shop-api/src/shared/http/domain-error-mapper.ts": {
+    "mtime": 1786832587.9663248,
+    "ast_hash": "ad9e4bccad0ff87e913ac15be1c75425",
+    "semantic_hash": "ad9e4bccad0ff87e913ac15be1c75425"
+  },
+  "projects/merkee-shop-api/src/shared/http/http-exception.filter.spec.ts": {
+    "mtime": 1786832595.383358,
+    "ast_hash": "7396704c80a5396dd99686903dd6bee0",
+    "semantic_hash": "7396704c80a5396dd99686903dd6bee0"
+  },
+  "projects/merkee-shop-api/src/shared/http/http-exception.filter.ts": {
+    "mtime": 1786832497.1679223,
+    "ast_hash": "d876cc53777d37748620ab15e65d6118",
+    "semantic_hash": "d876cc53777d37748620ab15e65d6118"
+  },
+  "projects/merkee-shop-api/src/shared/http/http.module.ts": {
+    "mtime": 1786832519.0630183,
+    "ast_hash": "7e092d6ca71295a48ece45fa0b2e84bd",
+    "semantic_hash": "7e092d6ca71295a48ece45fa0b2e84bd"
+  },
+  "projects/merkee-shop-api/src/shared/http/result-projector.spec.ts": {
+    "mtime": 1786832583.8703063,
+    "ast_hash": "1389f9d9913348f7b4b3ad6929e07c01",
+    "semantic_hash": "1389f9d9913348f7b4b3ad6929e07c01"
+  },
+  "projects/merkee-shop-api/src/shared/http/result-projector.ts": {
+    "mtime": 1786832481.490854,
+    "ast_hash": "e3438cb57edfc38bdc6f337202a19bf0",
+    "semantic_hash": "e3438cb57edfc38bdc6f337202a19bf0"
+  },
+  "projects/merkee-shop-api/src/shared/http/transport-auth.guard.spec.ts": {
+    "mtime": 1786832568.0462356,
+    "ast_hash": "a1860751d82daf354c3371be042a8049",
+    "semantic_hash": "a1860751d82daf354c3371be042a8049"
+  },
+  "projects/merkee-shop-api/src/shared/http/transport-auth.guard.ts": {
+    "mtime": 1786832514.403998,
+    "ast_hash": "6f288899515662a1bf0935ba9d303737",
+    "semantic_hash": "6f288899515662a1bf0935ba9d303737"
+  },
+  "projects/merkee-shop-api/src/shared/http/transport-error.ts": {
+    "mtime": 1786832486.552876,
+    "ast_hash": "4efbaca84e4f55fbf45aa53113206c12",
+    "semantic_hash": "4efbaca84e4f55fbf45aa53113206c12"
+  },
+  "projects/merkee-shop-api/src/shared/http/transport-validation.pipe.spec.ts": {
+    "mtime": 1786832562.7742121,
+    "ast_hash": "eaf178cc88414d77a4338e37e235e0e7",
+    "semantic_hash": "eaf178cc88414d77a4338e37e235e0e7"
+  },
+  "projects/merkee-shop-api/src/shared/http/transport-validation.pipe.ts": {
+    "mtime": 1786832505.2029574,
+    "ast_hash": "174231c1315ddbbf41b291e87037c189",
+    "semantic_hash": "174231c1315ddbbf41b291e87037c189"
+  },
+  "projects/merkee-shop-api/tsconfig.build.json": {
+    "mtime": 1786832075.4652424,
+    "ast_hash": "82c913f5cb729a004da68d89809de231",
+    "semantic_hash": "82c913f5cb729a004da68d89809de231"
+  },
+  "projects/merkee-shop-api/tsconfig.json": {
+    "mtime": 1786832074.8922405,
+    "ast_hash": "c028bb2f55dd3f6a2f28d73c3f19bb27",
+    "semantic_hash": "c028bb2f55dd3f6a2f28d73c3f19bb27"
+  },
+  "docs/api/openapi.yaml": {
+    "mtime": 1786923050.3124902,
+    "ast_hash": "362b6d6dbcd20ba413571106221e58da",
+    "semantic_hash": ""
+  },
+  "docs/specs/.working/merkee-shop-foundation-sdd-context.md": {
+    "mtime": 1786924740.9097934,
+    "ast_hash": "62ff6cd30fb5938d5df1f920976bce7d",
+    "semantic_hash": ""
+  },
+  "docs/specs/.working/merkee-shop-foundation-stabilization-sdd-context.md": {
+    "mtime": 1786925996.7287738,
+    "ast_hash": "85378b2003df9a8d9d48cb4be2c2c823",
+    "semantic_hash": ""
+  },
+  "docs/specs/architecture-decisions.md": {
+    "mtime": 1786915629.4500618,
+    "ast_hash": "1cc8693c0b675c67acdfab6a5aa155d2",
+    "semantic_hash": ""
+  },
+  "docs/specs/increments/merkee-shop-foundation-stabilization-delta-spec.md": {
+    "mtime": 1786926010.7478616,
+    "ast_hash": "c48baee6f0fd866d0161f3e1189cb419",
+    "semantic_hash": ""
+  },
+  "docs/specs/master_spec.md": {
+    "mtime": 1786924747.8578563,
+    "ast_hash": "8e4cb3f85662f2824c00470042ec74fe",
+    "semantic_hash": ""
+  },
+  "docs/specs/prisma-migration-contract.md": {
+    "mtime": 1786924752.1758952,
+    "ast_hash": "5fd82f655156da1ffe31093075eb402c",
+    "semantic_hash": ""
+  },
+  "docs/specs/requirements/merkee-shop-foundation-requirements-brief.md": {
+    "mtime": 1786922851.2016973,
+    "ast_hash": "a18a59ae8a521319f40b6e82d8e4b0d9",
+    "semantic_hash": ""
+  },
+  "docs/specs/tasks/merkee-shop-foundation-task-board.md": {
+    "mtime": 1786923418.936193,
+    "ast_hash": "905bf4ee29124bfb7d6c7c6880210b91",
+    "semantic_hash": ""
+  },
+  "docs/specs/technical_debt.md": {
+    "mtime": 1786925242.030782,
+    "ast_hash": "7e3f403f1c2d52a338160fcc3b6c3bbc",
+    "semantic_hash": ""
+  },
+  "docs/specs/workspace_changes.md": {
+    "mtime": 1786925270.794987,
+    "ast_hash": "bca9ee1eeae26e8d3f5bfa00e90ac03c",
+    "semantic_hash": ""
+  },
+  "projects/merkee-shop-admin/README.md": {
+    "mtime": 1786831613.748604,
+    "ast_hash": "3f44c26271034a08bfa04cad1a458250",
+    "semantic_hash": ""
+  },
+  "projects/merkee-shop-api/README.md": {
+    "mtime": 1786831611.8005934,
+    "ast_hash": "627b4fba8942761c90045293a10e2b6a",
+    "semantic_hash": ""
+  },
+  "projects/merkee-shop-api/docs/specs/technical_debt.md": {
+    "mtime": 1786925246.9648173,
+    "ast_hash": "64bf04051b199df82d26030d0abe07fc",
+    "semantic_hash": ""
+  },
+  "projects/merkee-shop-api/prisma/README-seed.md": {
+    "mtime": 1786834126.3998747,
+    "ast_hash": "55416ae1d27832adc7b63ad375189b78",
+    "semantic_hash": ""
+  },
+  "projects/merkee-shop-storefront/README.md": {
+    "mtime": 1786831612.808599,
+    "ast_hash": "81679dc01935b36337968ecd1ec5f939",
+    "semantic_hash": ""
+  },
+  "docs/Wompi FullStack Test.pdf": {
+    "mtime": 1786747529.578558,
+    "ast_hash": "6960c22f7ab4980cf637eb60577f1c3e",
+    "semantic_hash": ""
+  }
+}
