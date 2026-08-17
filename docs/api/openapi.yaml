@@ -202,7 +202,7 @@ paths:
       x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es creador autenticado + clave + cuerpo canónico. La misma solicitud devuelve el 201 original; la reproducción divergente devuelve 409 IDEMPOTENCY_KEY_REUSED.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateAdminUserRequest' } } } }
-      responses: { '201': { description: Admin aprovisionado, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/AdminUserProvisionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '201': { description: Admin aprovisionado, headers: { Location: { schema: { type: string, format: uri } } }, content: { application/json: { schema: { $ref: '#/components/schemas/AdminUserProvisionResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound', description: '404 RESOURCE_NOT_FOUND en replay idempotente cuando el recurso aprovisionado fue eliminado y no existe para reconstruir la respuesta (STAB-DEC-10 Opción A).' }, '409': { $ref: '#/components/responses/Conflict' }, '429': { $ref: '#/components/responses/RateLimited' }, '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/categories:
     get:
       operationId: adminListCategories
@@ -213,6 +213,7 @@ paths:
       operationId: adminCreateCategory
       tags: [Admin]
       summary: El admin crea una categoría referenciando una clave de media S3 validada.
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve la categoría original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWriteRequest' } } } }
       responses: { '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -221,6 +222,7 @@ paths:
       operationId: adminUpdateCategory
       tags: [Admin]
       summary: Actualiza la categoría usando bloqueo optimista; If-Match debe coincidir con la versión actual o se devuelve 409.
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve la categoría actualizada original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/CategoryPathId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryWriteRequest' } } } }
       responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/CategoryResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -228,6 +230,7 @@ paths:
       operationId: adminDeleteCategory
       tags: [Admin]
       summary: Eliminación lógica solo cuando ningún producto activo pertenece a la categoría.
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + path. La misma solicitud devuelve 204; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/CategoryPathId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       responses: { '204': { description: Eliminado }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/products:
@@ -241,6 +244,7 @@ paths:
       operationId: adminCreateProduct
       summary: Crea un producto.
       tags: [Admin]
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve el producto original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProductWriteRequest' } } } }
       responses: { '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -250,6 +254,7 @@ paths:
       summary: Actualiza los datos generales del producto.
       tags: [Admin]
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve el producto actualizado original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       description: 'Edición general del producto usando bloqueo optimista; If-Match debe coincidir con la versión actual o se devuelve 409. `stock_on_hand` y `stock_reserved` quedan excluidos; el stock cambia solo a través del subrecurso de ajustes de stock, que no usa If-Match.'
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProductUpdateRequest' } } } }
       responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/ProductResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -257,6 +262,7 @@ paths:
       operationId: adminDeleteProduct
       summary: Eliminación lógica de un producto.
       tags: [Admin]
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + path. La misma solicitud devuelve 204; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       responses: { '204': { description: Eliminado lógicamente }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/products/{productId}/stock-adjustments:
@@ -280,6 +286,7 @@ paths:
       operationId: adminCreateBanner
       summary: Crea un banner.
       tags: [Admin]
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve el banner original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannerWriteRequest' } } } }
       responses: { '201': { description: Creado, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -288,6 +295,7 @@ paths:
       operationId: adminUpdateBanner
       tags: [Admin]
       summary: Actualiza el banner usando bloqueo optimista; If-Match debe coincidir con la versión actual o se devuelve 409.
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve el banner actualizado original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/BannerId' }, { $ref: '#/components/parameters/IfMatch' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BannerWriteRequest' } } } }
       responses: { '200': { description: Actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/BannerResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -295,6 +303,7 @@ paths:
       operationId: adminDeleteBanner
       summary: Eliminación lógica de un banner.
       tags: [Admin]
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + path. La misma solicitud devuelve 204; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/BannerId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       responses: { '204': { description: Eliminado lógicamente }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /admin/orders:
@@ -317,6 +326,7 @@ paths:
       tags: [Media]
       summary: El admin emite una URL de subida S3 de corta duración; la subida se completa fuera de la API.
       description: Emite una URL PUT de corta duración para media S3 privada. El navegador nunca recibe credenciales de S3 y la finalización de la subida se valida por separado.
+      x-idempotency: 'Se requiere `Idempotency-Key`; el alcance es admin autenticado + clave + cuerpo canónico. La misma solicitud devuelve la URL prefirmada original; la reproducción divergente devuelve 409 `IDEMPOTENCY_KEY_REUSED`.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateUploadUrlRequest' } } } }
       responses: { '201': { description: URL prefirmada, content: { application/json: { schema: { $ref: '#/components/schemas/UploadUrlResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' } , '500': { $ref: '#/components/responses/InternalServerError' } }
@@ -330,7 +340,7 @@ paths:
       x-idempotency: el ID de evento del proveedor se deduplica antes de la transición de estado; el reembolso automático se deduplica por ID de pago.
       parameters: [{ name: X-Event-Id, in: header, required: true, schema: { type: string, minLength: 1 } }, { name: X-Event-Signature, in: header, required: true, schema: { type: string, minLength: 1 } }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProviderWebhookPayload' } } } }
-      responses: { '204': { description: Aceptado o duplicado }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: 'Aceptado o duplicado idempotente; los eventos duplicados reciben 204 (no 409) y se clasifican internamente como DUPLICATE_WEBHOOK_EVENT sin proyectarse al proveedor (STAB-DEC-11 Opción A).' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /webhooks/mercado-pago:
     post:
       operationId: receiveMercadoPagoWebhook
@@ -341,7 +351,7 @@ paths:
       x-idempotency: el ID de evento del proveedor se deduplica antes de la transición de estado; el reembolso automático se deduplica por ID de pago.
       parameters: [{ name: X-Request-Id, in: header, required: true, schema: { type: string } }, { name: X-Signature, in: header, required: true, schema: { type: string } }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/ProviderWebhookPayload' } } } }
-      responses: { '204': { description: Aceptado o duplicado }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: 'Aceptado o duplicado idempotente; los eventos duplicados reciben 204 (no 409) y se clasifican internamente como DUPLICATE_WEBHOOK_EVENT sin proyectarse al proveedor (STAB-DEC-11 Opción A).' }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' } , '500': { $ref: '#/components/responses/InternalServerError' } }
 components:
   securitySchemes: { bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT, description: 'JWT de acceso; se requiere rol `admin` para los endpoints `/admin` y de media; se requiere rol `cliente` para el checkout y los pedidos propios.' }, cartSessionCookie: { type: apiKey, in: cookie, name: merkee_cart_session, description: 'Cookie opaca de sesión de invitado HttpOnly; nunca se devuelve en JSON, URL, localStorage ni logs.' } }
   parameters:

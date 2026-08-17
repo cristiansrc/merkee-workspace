@@ -1,7 +1,7 @@
 # Requirements Brief — merkee.shop Foundation
 
 ## Status
-`planning`. Brief funcional consolidado; no habilita handoff. Master Spec y OpenAPI son la fuente contractual.
+`revision-needed`. Brief funcional consolidado; aprobación humana del plan otorgada el 2026-08-15 (**histórica/superseded**: invalidada por los cambios materiales posteriores ADR-018, migraciones 010–013, correcciones ROP y purga MSF-ID-002, más la remediación documental de estabilización 2026-08-16). Master Spec y OpenAPI son la fuente contractual. Se requiere revalidación focalizada de Spec Validator y, tras `ready`, nueva aprobación humana aplicable antes de cualquier handoff.
 
 ## Objetivo y alcance
 
