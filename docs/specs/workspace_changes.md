@@ -101,3 +101,26 @@ El usuario autoriza esta remediación controlada para romper el bloqueo circular
 ### Lo que esta autorización NO autoriza
 
 Esta remediación controlada **no autoriza**: (1) nuevas funcionalidades, endpoints, módulos, migraciones, schemas, parámetros ni reglas de negocio; (2) el desbloqueo del task board general (permanece `blocked`); (3) despliegue u operación en producción; (4) operaciones de Git (commits, branches, PRs); (5) la modificación de código, Prisma, `package.json` ni runtime por parte del Planner; (6) handoff a otros agentes sin veredicto `ready` + aprobación humana; (7) declarar `ready` ni transicionar el incremento fuera de `planning`/`revision-needed`.
+
+## Avances de infraestructura AWS (2026-08-18) — estado operativo, no cambia el lifecycle de spec
+
+> Nota: esta sección documenta **estado operativo de infraestructura AWS verificado**
+> y no altera el lifecycle de `workspace_changes.md` (`revision-needed`), ni la Master
+> Spec (`validated-not-executed`), ni el veredicto de Spec Validator (`pending`). No
+> constituye declaración de producción lista. No se ejecutaron operaciones de Git.
+
+Hechos confirmados (cuenta de aprendizaje, región `us-east-1`, un único ambiente):
+
+1. **Identidad/tooling:** Agent Toolkit/MCP AWS configurado; perfil local AWS CLI `merkee`. No se incluyen credenciales.
+2. **IAM OIDC GitHub:** role `merkee-github-actions-deploy` con trust ajustado a subjects GitHub reales (con IDs).
+3. **ECS task role:** `merkee-backend-task-role` creado.
+4. **Secrets Manager:** secreto `merkee/app` creado y referenciado por la task definition (mapeo `secrets` JSON); no se exponen valores.
+5. **ECS task definition:** `merkee-backend-task` **revision 2** configurada con `taskRole` y mapeo `secrets` JSON. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (imagen y health check por confirmar). No se afirma despliegue terminado.
+6. **GitHub Actions:** workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó.
+7. **Dockerfile API:** multi-stage no-root creado y **build local validado**.
+8. **S3 + CloudFront:** `merkee-frontend-client` / `E32P11SX9DFU82` → `merkee.shop`; `merkee-frontend-admin` / `E119IKP00L5RU` → `admin.merkee.shop`. `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido.
+9. **DNS/Dominio:** gestionado en Spaceship; `api.merkee.shop` y `admin.merkee.shop` existen; `swagger.merkee.shop` **pendiente** de distribución/origen.
+10. **RDS:** `merkee-db` existe; auditoría indicó `PubliclyAccessible=True` como riesgo pendiente; **no se afirma corrección**.
+11. **Cobertura API:** última medición local confirmada — 125 suites / 1232 tests PASS; statements 93.36%, branches 84.43%, functions 93.01%, lines 93.57%. Etiquetado como medición local, no producción.
+
+Deuda AWS registrada (ver `docs/specs/technical_debt.md` y espejo local): TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS, TD-AWS-OBSERVABILITY, TD-AWS-ECS-VALIDATION. TD-MSF-ID-002-03 permanece `active` (falta decisión de coordinación/reemplazo del scheduler, ownership, alarms y prevención de doble ejecución); la configuración parcial de AWS no lo cierra.

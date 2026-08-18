@@ -123,27 +123,34 @@ pero **no** constituye declaración de producción lista.
 - DAG de módulos: `identity→media→catalog→cart-reservation→orders→payments→checkout`,
   con `checkout→cart-reservation` directa y `admin-query` solo lectura.
 
-## Infraestructura AWS propuesta (un solo ambiente)
+## Infraestructura AWS — estado real (un solo ambiente, us-east-1)
 
-> Estado real: **AWS no está configurado**. Lo siguiente es la propuesta
-> arquitectónica (ADR-006/007) y su grado de avance local.
+> Estado real (revisado 2026-08-18): **AWS está configurado** en una cuenta de
+> aprendizaje, región `us-east-1`, **un único ambiente**. No se afirma despliegue
+> productivo terminado: el servicio ECS está **en despliegue / pendiente de
+> verificación** (imagen y health check por confirmar). No se incluyen credenciales
+> ni valores de secretos. La configuración de infra no invalida las specs vigentes
+> (Master Spec en `validated-not-executed`); es estado operativo adicional.
 
 | Componente AWS | Propósito | Estado |
 |---|---|---|
-| **ECS Fargate** | Contenedor de la API y (opcional) jobs | Pendiente de configuración AWS. Localmente la API corre como proceso NestJS (`npm run start:dev` / `node dist/main`). |
-| **RDS PostgreSQL** | Base de datos gestionada | Pendiente de configuración AWS. Localmente se usa PostgreSQL en Docker vía Prisma Migrate. |
-| **S3 privado + CloudFront/OAC** | Hosting de las SPAs y media privada | Decisiones fijadas (ADR-006) pero **no configurado**. Buckets privados, solo CloudFront lee por OAC; CSP/CORS allowlist. |
-| **Secrets Manager** | `JWT_SECRET`, `INITIAL_ADMIN_PASSWORD`, credenciales | Pendiente de configuración AWS. Localmente se inyectan vía `.env` (no versionado). |
-| **CloudWatch** | Logs y métricas | Pendiente de configuración AWS. Localmente el bridge de métricas usa `prom-client` (Prometheus) y está cableado para exponer las métricas canónicas; el destino CloudWatch no está conectado. |
+| **ECS Fargate** | Contenedor de la API | Task definition `merkee-backend-task` **revision 2** configurada con `taskRole` (`merkee-backend-task-role`) y mapeo `secrets` JSON. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (running y health check por confirmar). |
+| **ECR** | Registro de imágenes | Repositorio `merkee-backend-api` existe. Dockerfile multi-stage no-root de la API creado y **build local validado**; push/despliegue pendiente de verificación. |
+| **RDS PostgreSQL** | Base de datos gestionada | `merkee-db` existe (PostgreSQL). **Riesgo pendiente:** auditoría indicó `PubliclyAccessible=True`; no se afirma corrección (TD-AWS-RDS-PUBLIC). |
+| **S3 privado + CloudFront/OAC** | Hosting de las SPAs y media | Buckets `merkee-frontend-client` (CloudFront `E32P11SX9DFU82` → `merkee.shop`) y `merkee-frontend-admin` (CloudFront `E119IKP00L5RU` → `admin.merkee.shop`) desplegados. `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido. |
+| **Secrets Manager** | Secretos de aplicación | Secreto `merkee/app` creado y referenciado por la task definition (mapeo JSON `secrets`); no se exponen valores. Nombres de variables inyectadas: ver `projects/merkee-shop-api/README.md` (solo nombres). |
+| **CloudWatch** | Logs y métricas | Log group `/ecs/merkee-backend-task` creado. **Pendiente:** alarms/observabilidad no configuradas (TD-AWS-OBSERVABILITY). Localmente el bridge de métricas usa `prom-client` (Prometheus). |
+| **Route53 / ACM** | DNS y certificados TLS | DNS gestionado en **Spaceship** (no Route53); `api.merkee.shop` y `admin.merkee.shop` existen. `swagger.merkee.shop` **pendiente** de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
+| **IAM / OIDC** | Identidad de carga de trabajo y acceso | Role IAM OIDC de GitHub `merkee-github-actions-deploy` con trust ajustado a subjects GitHub reales (con IDs). Task role `merkee-backend-task-role` creado. Perfil local AWS CLI `merkee` (Agent Toolkit/MCP). |
+| **GitHub Actions** | CI/CD | Workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó (TD-AWS-ECS-VALIDATION). |
 | **SNS/SQS/DLQ selectivo** | Efectos desacoplados (outbox, reintentos) | Pendiente de configuración AWS. La lógica de reintentos/idempotencia es local; sin Step Functions (ADR-007). |
-| **Route53 / ACM** | DNS y certificados TLS | Pendiente de configuración AWS. |
 | **KMS** | Cifrado en reposo / sobres de secreto | Pendiente de configuración AWS. |
-| **IAM / OIDC** | Identidad de carga de trabajo y acceso | Pendiente de configuración AWS. |
 
 **Implementado localmente (no requiere AWS):** scheduler diario de purga de
 `idempotency_records` como driving adapter cableado al arranque (`setTimeout`,
 hora configurable UTC, default `02:00`); métricas Prometheus locales; validación
-de firma de webhooks sobre raw body; migraciones Prisma reproducibles.
+de firma de webhooks sobre raw body; migraciones Prisma reproducibles; Dockerfile
+multi-stage no-root de la API con build local validado.
 
 ## Seguridad
 
@@ -203,6 +210,9 @@ medición (no se afirman porcentajes para ellos).
 - Para el API: ver `projects/merkee-shop-api/README.md`.
 - Para el portal: ver `projects/merkee-shop-storefront/README.md`.
 - Para el panel: ver `projects/merkee-shop-admin/README.md`.
+- **Estado de despliegue AWS e incidente actual:** ver `docs/DEPLOYMENT_STATUS.md`
+  (avances, AWS configurado, acciones realizadas, incidente ECS, próximos pasos
+  exactos, seguridad y enlaces de ramas). No se afirma producción estable.
 
 ## Pendientes de decisión
 

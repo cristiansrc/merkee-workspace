@@ -105,6 +105,22 @@
 
 Aprobación humana recibida para continuar con la siguiente tarea permitida. No sustituye el veredicto del Spec Validator ni autoriza modificar código, OpenAPI, Prisma, scripts o Git. La aprobación humana anterior se conserva como historial **superseded**.
 
+## Operational AWS state (2026-08-18)
+
+Estado operativo de infraestructura, **adicional a la spec** y sin alterar el lifecycle (`validated-not-executed`) ni el veredicto de Spec Validator (`ready` histórico, revalidación pendiente). No constituye declaración de producción lista.
+
+- Cuenta de aprendizaje, región `us-east-1`, un único ambiente. Perfil local AWS CLI `merkee` (Agent Toolkit/MCP). No se incluyen credenciales.
+- IAM OIDC GitHub `merkee-github-actions-deploy` (trust a subjects GitHub reales con IDs); task role `merkee-backend-task-role` creado.
+- Secrets Manager `merkee/app` creado y referenciado por la task definition (mapeo `secrets` JSON); no se exponen valores.
+- ECS task definition `merkee-backend-task` revision 2 con `taskRole` y mapeo `secrets` JSON; servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (running/health check por confirmar). No se afirma despliegue terminado.
+- Dockerfile multi-stage no-root de la API creado y build local validado; ECR `merkee-backend-api` existe.
+- S3/CloudFront: `merkee-frontend-client`/`E32P11SX9DFU82`→`merkee.shop`, `merkee-frontend-admin`/`E119IKP00L5RU`→`admin.merkee.shop`; `aws-s3-tickets-images` excluido.
+- DNS en Spaceship; `api.merkee.shop` y `admin.merkee.shop` existen; `swagger.merkee.shop` pendiente.
+- RDS `merkee-db` existe; auditoría indicó `PubliclyAccessible=True` (riesgo pendiente, no afirmado como corregido).
+- Deuda AWS: TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS, TD-AWS-OBSERVABILITY, TD-AWS-ECS-VALIDATION (ver `technical_debt.md`). TD-MSF-ID-002-03 permanece `active`.
+
+Esta sección no modifica contratos, criterios de aceptación ni el veredicto de Spec Validator; es trazabilidad operativa.
+
 ## Stale terms guard
 
 Forbidden: `response` JSONB, respuesta original/completa o snapshot de tres campos como regla/evidencia vigente (HISTÓRICO/SUPERSEDED); full `AdminUserProvisionResponse` in idempotency storage; PII/token/password/hash in `response_json`, logs or metrics; replay from stored PII; UUID fuera de v1–v8/RFC 4122 en `resource_id`; derivar `activation_expires_at` desde token usado/expirado; usar 008 para fijar la ventana operativa en lugar de la evaluación contractual 24 h/30 días; purge of `replay_active` or unknown scope; inventar scope, terminalidad o prueba de purga para TD-MSF-ID-002-01; declarar cerrada TD-MSF-ID-002-02 sin evidencia legal/contable; afirmar AWS configurado o cerrada TD-MSF-ID-002-03 sin decisión de coordinación/reemplazo, ownership, alarmas y prevención de doble ejecución; treating `retention_not_elapsed` as a separate retention window or purge behavior; in-memory metrics in production; AWS-only scheduler without local driving adapter; bootstrap no-op for non-admin role; new endpoint/OpenAPI change; `POST /auth/initial-password-change`; afirmar que el commit del grafo (`89bcd155`) es igual a `HEAD` o que el grafo está actualizado respecto a `HEAD` sin verificación con Git (blocked para frescura); **afirmar «password reset fuera de alcance» o «no implementado» como estado vigente (HISTÓRICO/SUPERSEDED — MSF-ID-003 implementado)**; declarar MSF-ID-003 `done`/cerrada sin nuevo `verdict: ready` de Spec Validator; token en claro en logs/métricas/trazas/responses del flujo de reset; aplicar la migración 014 sin preflight PostgreSQL de duplicados activos; editar migraciones aplicadas 001–013; **persistir refresh token, hash de sesión, contraseña, secreto o credenciales derivadas en `idempotency_records`, logs o métricas del flujo de password-change**; replay de password-change que re-valide `current_password`, rote cookie o repita la mutación; `500` espurio o doble rotación por carrera concurrente en password-change; afirmar que el snapshot de replay de password-change almacena la respuesta contractual completa o credenciales (HISTÓRICO/SUPERSEDED por ADR-020).
