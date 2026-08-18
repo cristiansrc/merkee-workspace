@@ -253,17 +253,3 @@ medición (no se afirman porcentajes para ellos).
   (referencias a recursos/identificadores de cuenta). No se incluye su contenido
   aquí ni se afirma su estado.
 
-## Pendientes de decisión
-
-- **PDF no legible por el agente:** `docs/Wompi FullStack Test.pdf` no pudo ser
-  parseado por el modelo. La documentación se basó en los artefactos canónicos
-  derivados de la prueba (requirements brief, master spec, ADRs, task board,
-  deuda técnica). Se recomienda revisar manualmente el PDF para confirmar
-  cualquier requisito no reflejado en dichos artefactos.
-- **Deuda TD-MSF-API-005 reconciliada (2026-08-18):** el registro indicaba que
-  storefront/admin "contienen únicamente README y .gitignore"; en disco ambos
-  tienen código, `package.json`, `node_modules` y `dist`. La entrada pasó a
-  `HISTÓRICO/SUPERSEDED` en `docs/specs/technical_debt.md` y su espejo local.
-- **`.env.example` del admin:** apunta a `https://api.merkee.shop/vite`; parece
-  un typo de `/v1` (el prefijo canónico del server OpenAPI es `/v1`). Confirmar
-  antes de usar.
