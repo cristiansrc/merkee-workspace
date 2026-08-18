@@ -18,11 +18,29 @@ de los tres componentes vive en repositorios/hermanos dentro de `projects/`.
 
 ## Estructura de ramas
 
-Cada repositorio sigue el mismo esquema de ramas:
+Los tres repositorios de código (`merkee-shop-api`, `merkee-shop-storefront`,
+`merkee-shop-admin`) siguen el mismo esquema de ramas:
 
 - `main` — rama principal de integración y posible despliegue a producción.
 - `qa` — rama de control de calidad y validación.
 - `developer` — rama de desarrollo activo (target de las tareas del task board).
+
+El **workspace** (`merkee-workspace`) mantiene únicamente la rama `main` como
+fuente de documentación y specs (no usa `qa`/`developer`).
+
+## Commits y push recientes (GitHub)
+
+Últimos commits/push confirmados en los repositorios remotos (no constituyen
+declaración de producción estable):
+
+| Repositorio | Commit | Nota |
+|---|---|---|
+| `merkee-workspace` | `484bbeb` | Documentación / specs. |
+| `merkee-shop-api` | `89acf70` | API backend. |
+| `merkee-shop-storefront` | `9325ae5` | Portal de tienda. |
+| `merkee-shop-admin` | `83fe06a` | Panel administrativo. |
+
+Los hashes corresponden al HEAD remoto más reciente conocido y pueden avanzar.
 
 ## Propósito del sistema
 
@@ -127,15 +145,19 @@ pero **no** constituye declaración de producción lista.
 
 > Estado real (revisado 2026-08-18): **AWS está configurado** en una cuenta de
 > aprendizaje, región `us-east-1`, **un único ambiente**. No se afirma despliegue
-> productivo terminado: el servicio ECS está **en despliegue / pendiente de
-> verificación** (imagen y health check por confirmar). No se incluyen credenciales
-> ni valores de secretos. La configuración de infra no invalida las specs vigentes
-> (Master Spec en `validated-not-executed`); es estado operativo adicional.
+> productivo terminado. Avances: **ECR** y **CI/CD** progresan (imagen y pipelines
+> en construcción/validación). El servicio **ECS** presentó fallos de arranque
+> relacionados con **Prisma**, **RDS** y **puertos**; el **Security Group
+> ECS→RDS** ya está aplicado. **Pendiente:** verificación final de
+> `api.merkee.shop` y estabilidad del servicio en **1/1** (running + health check
+> `/health`). No se incluyen credenciales ni valores de secretos. La
+> configuración de infra no invalida las specs vigentes (Master Spec en
+> `validated-not-executed`); es estado operativo adicional.
 
 | Componente AWS | Propósito | Estado |
 |---|---|---|
-| **ECS Fargate** | Contenedor de la API | Task definition `merkee-backend-task` **revision 2** configurada con `taskRole` (`merkee-backend-task-role`) y mapeo `secrets` JSON. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (running y health check por confirmar). |
-| **ECR** | Registro de imágenes | Repositorio `merkee-backend-api` existe. Dockerfile multi-stage no-root de la API creado y **build local validado**; push/despliegue pendiente de verificación. |
+| **ECS Fargate** | Contenedor de la API | Task definition `merkee-backend-task` **revision 2** configurada con `taskRole` (`merkee-backend-task-role`), mapeo `secrets` JSON y health check `/health`. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (running y health check por confirmar). |
+| **ECR** | Registro de imágenes | Repositorio `merkee-backend-api` existe. Dockerfile multi-stage no-root de la API creado con **Prisma** y **OpenSSL** en la imagen, endpoint de salud `/health`, y **build local validado**; push/despliegue pendiente de verificación. |
 | **RDS PostgreSQL** | Base de datos gestionada | `merkee-db` existe (PostgreSQL). **Riesgo pendiente:** auditoría indicó `PubliclyAccessible=True`; no se afirma corrección (TD-AWS-RDS-PUBLIC). |
 | **S3 privado + CloudFront/OAC** | Hosting de las SPAs y media | Buckets `merkee-frontend-client` (CloudFront `E32P11SX9DFU82` → `merkee.shop`) y `merkee-frontend-admin` (CloudFront `E119IKP00L5RU` → `admin.merkee.shop`) desplegados. `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido. |
 | **Secrets Manager** | Secretos de aplicación | Secreto `merkee/app` creado y referenciado por la task definition (mapeo JSON `secrets`); no se exponen valores. Nombres de variables inyectadas: ver `projects/merkee-shop-api/README.md` (solo nombres). |
@@ -145,6 +167,19 @@ pero **no** constituye declaración de producción lista.
 | **GitHub Actions** | CI/CD | Workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó (TD-AWS-ECS-VALIDATION). |
 | **SNS/SQS/DLQ selectivo** | Efectos desacoplados (outbox, reintentos) | Pendiente de configuración AWS. La lógica de reintentos/idempotencia es local; sin Step Functions (ADR-007). |
 | **KMS** | Cifrado en reposo / sobres de secreto | Pendiente de configuración AWS. |
+
+### Problemas y pendientes de despliegue (AWS)
+
+- **Alineación de puerto:** API, ALB y target group deben coincidir en el puerto
+  **3000** (fallos previos de ECS por desajuste de puertos).
+- **Health check:** confirmar que el endpoint `/health` responde y está
+  configurado en la target group / task definition.
+- **Verificación ECS:** confirmar servicio en estado **1/1** (running estable)
+  y `api.merkee.shop` accesible.
+- **Deuda AWS:** RDS expuesto públicamente (`PubliclyAccessible=True`),
+  distribución DNS de `swagger.merkee.shop` pendiente y **alarmas/observabilidad
+  CloudWatch** no configuradas (TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS,
+  TD-AWS-OBSERVABILITY).
 
 **Implementado localmente (no requiere AWS):** scheduler diario de purga de
 `idempotency_records` como driving adapter cableado al arranque (`setTimeout`,
@@ -213,6 +248,10 @@ medición (no se afirman porcentajes para ellos).
 - **Estado de despliegue AWS e incidente actual:** ver `docs/DEPLOYMENT_STATUS.md`
   (avances, AWS configurado, acciones realizadas, incidente ECS, próximos pasos
   exactos, seguridad y enlaces de ramas). No se afirma producción estable.
+- **Auditoría AWS (no versionada):** `AUDITORIA_AWS_MERKEE.md` documenta el estado
+  de la cuenta AWS; **no está versionada** en el repositorio por sensibilidad
+  (referencias a recursos/identificadores de cuenta). No se incluye su contenido
+  aquí ni se afirma su estado.
 
 ## Pendientes de decisión
 
