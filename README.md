@@ -141,28 +141,34 @@ pero **no** constituye declaración de producción lista.
 - DAG de módulos: `identity→media→catalog→cart-reservation→orders→payments→checkout`,
   con `checkout→cart-reservation` directa y `admin-query` solo lectura.
 
-## Infraestructura AWS — estado real (un solo ambiente, us-east-1)
+## Infraestructura AWS — estado de la infraestructura (un solo ambiente, us-east-1)
 
-> Estado real (revisado 2026-08-18): **AWS está configurado** en una cuenta de
-> aprendizaje, región `us-east-1`, **un único ambiente**. No se afirma despliegue
-> productivo terminado. Avances: **ECR** y **CI/CD** progresan (imagen y pipelines
+> **Línea base histórica (revisado 2026-08-18):** el párrafo siguiente describe el
+> estado al cierre de la entrega del lunes 2026-08-17 y la captura de incidente del
+> 2026-08-18. **No es el estado vigente.** El estado verificado posterior (2026-08-20)
+> — ECS estable, `api.merkee.shop/health` 200, dominios resueltos, CORS y `/v1`
+> corregidos — está en la sección **Estado de entrega y trabajo postentrega**.
+
+> Estado real al 2026-08-18 (histórico): **AWS estaba configurado** en una cuenta de
+> aprendizaje, región `us-east-1`, **un único ambiente**. No se afirmó despliegue
+> productivo terminado. Avances: **ECR** y **CI/CD** progresaban (imagen y pipelines
 > en construcción/validación). El servicio **ECS** presentó fallos de arranque
 > relacionados con **Prisma**, **RDS** y **puertos**; el **Security Group
-> ECS→RDS** ya está aplicado. **Pendiente:** verificación final de
+> ECS→RDS** ya estaba aplicado. **Pendiente en esa fecha:** verificación final de
 > `api.merkee.shop` y estabilidad del servicio en **1/1** (running + health check
-> `/health`). No se incluyen credenciales ni valores de secretos. La
-> configuración de infra no invalida las specs vigentes (Master Spec en
-> `validated-not-executed`); es estado operativo adicional.
+> `/health`). No se incluían credenciales ni valores de secretos. La
+> configuración de infra no invalidaba las specs vigentes (Master Spec en
+> `validated-not-executed`); era estado operativo adicional.
 
 | Componente AWS | Propósito | Estado |
 |---|---|---|
-| **ECS Fargate** | Contenedor de la API | Task definition `merkee-backend-task` **revision 2** configurada con `taskRole` (`merkee-backend-task-role`), mapeo `secrets` JSON y health check `/health`. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (running y health check por confirmar). |
-| **ECR** | Registro de imágenes | Repositorio `merkee-backend-api` existe. Dockerfile multi-stage no-root de la API creado con **Prisma** y **OpenSSL** en la imagen, endpoint de salud `/health`, y **build local validado**; push/despliegue pendiente de verificación. |
+| **ECS Fargate** | Contenedor de la API | *Histórico 2026-08-18:* task definition `merkee-backend-task` **revision 2** con `taskRole` (`merkee-backend-task-role`), mapeo `secrets` JSON y health check `/health`; servicio `merkee-backend-service` en despliegue/pendiente de verificación. *Verificado 2026-08-20:* servicio estable vía CI/CD, `api.merkee.shop/health` 200 (ver sección **Estado de entrega y trabajo postentrega**). |
+| **ECR** | Registro de imágenes | *Histórico 2026-08-18:* repositorio `merkee-backend-api` existía; Dockerfile multi-stage no-root con **Prisma** y **OpenSSL**, endpoint `/health`, build local validado; push pendiente. *Verificado 2026-08-20:* imagen publicada vía CI/CD y servicio ECS estable (ver sección **Estado de entrega y trabajo postentrega**). |
 | **RDS PostgreSQL** | Base de datos gestionada | `merkee-db` existe (PostgreSQL). **Riesgo pendiente:** auditoría indicó `PubliclyAccessible=True`; no se afirma corrección (TD-AWS-RDS-PUBLIC). |
 | **S3 privado + CloudFront/OAC** | Hosting de las SPAs y media | Buckets `merkee-frontend-client` (CloudFront `E32P11SX9DFU82` → `merkee.shop`) y `merkee-frontend-admin` (CloudFront `E119IKP00L5RU` → `admin.merkee.shop`) desplegados. `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido. |
 | **Secrets Manager** | Secretos de aplicación | Secreto `merkee/app` creado y referenciado por la task definition (mapeo JSON `secrets`); no se exponen valores. Nombres de variables inyectadas: ver `projects/merkee-shop-api/README.md` (solo nombres). |
 | **CloudWatch** | Logs y métricas | Log group `/ecs/merkee-backend-task` creado. **Pendiente:** alarms/observabilidad no configuradas (TD-AWS-OBSERVABILITY). Localmente el bridge de métricas usa `prom-client` (Prometheus). |
-| **Route53 / ACM** | DNS y certificados TLS | DNS gestionado en **Spaceship** (no Route53); `api.merkee.shop` y `admin.merkee.shop` existen. `swagger.merkee.shop` **pendiente** de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
+| **Route53 / ACM** | DNS y certificados TLS | DNS gestionado en **Spaceship** (no Route53); `api.merkee.shop`, `merkee.shop`, `www.merkee.shop` y `admin.merkee.shop` existen. *Verificado 2026-08-20:* `merkee.shop` redirige 301 a `www.merkee.shop`; `www.merkee.shop` y `admin.merkee.shop` responden 200; `api.merkee.shop/health` 200. `swagger.merkee.shop` **pendiente** de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
 | **IAM / OIDC** | Identidad de carga de trabajo y acceso | Role IAM OIDC de GitHub `merkee-github-actions-deploy` con trust ajustado a subjects GitHub reales (con IDs). Task role `merkee-backend-task-role` creado. Perfil local AWS CLI `merkee` (Agent Toolkit/MCP). |
 | **GitHub Actions** | CI/CD | Workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó (TD-AWS-ECS-VALIDATION). |
 | **SNS/SQS/DLQ selectivo** | Efectos desacoplados (outbox, reintentos) | Pendiente de configuración AWS. La lógica de reintentos/idempotencia es local; sin Step Functions (ADR-007). |
@@ -187,6 +193,102 @@ hora configurable UTC, default `02:00`); métricas Prometheus locales; validaci�
 de firma de webhooks sobre raw body; migraciones Prisma reproducibles; Dockerfile
 multi-stage no-root de la API con build local validado.
 
+## Estado de entrega y trabajo postentrega
+
+> **Advertencia de frescura:** la evidencia operativa citada abajo fue verificada el
+> **2026-08-20** y es **fechada**; el estado de los servicios en AWS puede cambiar sin
+> aviso. No constituye declaración de producción lista. La fuente de verdad del sistema
+> sigue siendo `docs/specs/master_spec.md` y `docs/api/openapi.yaml`.
+
+### 1. Estado al entregar (lunes 2026-08-17)
+
+El lunes 2026-08-17 se entregaron los componentes (API NestJS, storefront React SPA,
+admin React + Refine SPA) e infraestructura base AWS. **No se afirmó estabilidad final
+ni despliegue productivo terminado.** Según la documentación histórica (README
+§Infraestructura AWS y `docs/DEPLOYMENT_STATUS.md`, captura 2026-08-18):
+
+- El servicio **ECS** presentaba fallos de arranque (Prisma/RDS/puertos) y estaba en
+  despliegue/pendiente de verificación (`Running` no confirmado en `1/1`).
+- **ECR** tenía la imagen pendiente de push/verificación.
+- **Dominios** (`api.merkee.shop`, `admin.merkee.shop`, `merkee.shop`) existían pero su
+  resolución y estabilidad estaban pendientes de verificación; el despliegue de
+  storefront/admin en CloudFront/S3 estaba reportado como desplegado sin validación de
+  extremo a extremo.
+- **CORS** y el **prefijo `/v1`** del API figuraban como pendientes/correctivos en
+  trabajo posterior.
+- El **admin** dependía de datos/mocks de desarrollo y no estaba conectado a la API real
+  de producción en ese momento.
+
+### 2. Trabajo postentrega verificado el 2026-08-20
+
+Trabajo de estabilización y cierre de incidentes ejecutado y verificado el 2026-08-20
+(evidencias fechadas; pueden cambiar):
+
+- **API ECS estable vía CI/CD:** el servicio `merkee-backend-service` quedó estable por
+  el pipeline de GitHub Actions; `api.merkee.shop/health` responde **200**.
+- **Storefront y admin en CloudFront/S3:** distribuciones CloudFront sobre buckets S3
+  para el portal (`merkee.shop` / `www.merkee.shop`) y el panel (`admin.merkee.shop`).
+- **DNS y routing:** `merkee.shop` redirige **301** a `www.merkee.shop`; `www.merkee.shop`
+  y `admin.merkee.shop` responden **200**. SPA fallback configurado en ambas SPAs.
+- **Corrección pantalla blanca del admin:** se corrigió el fallo de render (pantalla
+  blanca) del panel administrativo.
+- **Admin conectado a la API real sin mocks:** el panel admin consume la API desplegada
+  (`api.merkee.shop`) con datos reales, sin adaptadores mock.
+- **CORS configurado:** el API acepta los orígenes del storefront/admin (habilita la
+  comunicación real frontend↔API).
+- **Prefijo `/v1` corregido:** el routing del API usa el prefijo `/v1` conforme al
+  `servers.url` del OpenAPI (`https://api.merkee.shop/v1`).
+- **Workflows GitHub Actions exitosos:** los pipelines de API y admin finalizaron con
+  éxito. Commits relevantes del trabajo postentrega:
+  - `6330489` (API)
+  - `aec6283` (API)
+  - `7fdb009` (admin)
+  - `215b36b` (admin)
+
+  Enlaces a los workflows (evidencia fechada, puede cambiar):
+  - API: https://github.com/cristiansrc/merkee-shop-api/actions
+  - Storefront: https://github.com/cristiansrc/merkee-shop-storefront/actions
+  - Admin: https://github.com/cristiansrc/merkee-shop-admin/actions
+
+### 3. Estado actual honesto (2026-08-20)
+
+El sistema **no** está declarado listo para producción. Lo verificado hasta ahora:
+
+- El **frontend renderiza** (storefront y admin cargan y responden 200).
+- La **API pública** (`/v1/categories`, `/v1/products`) responde **200** pero devuelve
+  **listas vacías** (sin datos sembrados/seed productivo ni catálogo poblado).
+- El **login real** requiere credenciales válidas; no hay credenciales de prueba
+  públicas ni seed de usuario cliente/admin poblado.
+- **Pendiente de validación funcional completa:** flujo de sesiones, carrito servidor,
+  checkout, pagos (Wompi/Mercado Pago) y órdenes no han sido validados de extremo a
+  extremo contra la API desplegada.
+- **Bugs conocidos abiertos:** comportamiento de sesiones, carrito y pagos requiere
+  verificación/corrección; el seed de datos (catálogo, usuario admin/cliente) está
+  pendiente.
+
+**Gates abiertos antes de declarar producción** (no bloquean desarrollo, sí producción):
+RDS expuesta públicamente (`PubliclyAccessible=True`, TD-AWS-RDS-PUBLIC), hardening HTTP
+de borde (helmet/CSP/HSTS/nosniff, CSRF, rate limiting — TD-NEW-HTTP-SEC; CORS ya
+habilitado en postentrega, ver §Seguridad), observabilidad/CloudWatch alarms
+(TD-AWS-OBSERVABILITY), email productivo (reemplazo de `NoopEmailAdapter`), proveedores
+de pago reales (reemplazo de `FakePaymentProviderAdapter`), retención/anonimización
+pendiente de revisión legal/contable (TD-MSF-ID-002-02), decisión operativa AWS del
+scheduler (TD-MSF-ID-002-03) y swagger DNS (TD-AWS-SWAGGER-DNS). Véase
+`docs/specs/technical_debt.md`.
+
+### 4. Enlaces y advertencia de frescura
+
+- Workflows (evidencia fechada 2026-08-20, puede cambiar):
+  - API: https://github.com/cristiansrc/merkee-shop-api/actions
+  - Storefront: https://github.com/cristiansrc/merkee-shop-storefront/actions
+  - Admin: https://github.com/cristiansrc/merkee-shop-admin/actions
+- Estado de despliegue histórico: `docs/DEPLOYMENT_STATUS.md` (captura 2026-08-18, marcada
+  como línea base histórica; el incidente ECS allí descrito quedó resuelto según la
+  verificación 2026-08-20).
+- **La evidencia operativa es fechada y puede cambiar.** Cualquier afirmación de
+  "producción estable" requiere verificación en vivo renovada (ECS running/desired,
+  health check, logs, dominios) en el momento de la lectura.
+
 ## Seguridad
 
 - **Pagos tokenizados:** el PAN/CVV/fecha de tarjeta **nunca** se aceptan ni
@@ -201,9 +303,14 @@ multi-stage no-root de la API con build local validado.
 - **ROP:** todo caso de uso devuelve `Result<Success, DomainError>`; los
   errores de negocio no lanzan excepciones; `TECHNICAL_DEPENDENCY_FAILURE` (500)
   no revela causa/PII.
-- **Pendiente (gate antes de producción):** protecciones HTTP (helmet/CSP/HSTS/
-  nosniff, CORS allowlist, CSRF Origin/double-submit, rate limiting de
+- **Pendiente (gate antes de producción):** protecciones HTTP de borde (helmet/CSP/HSTS/
+  nosniff, CSRF Origin/double-submit, rate limiting de
   login/registro/reset/activación) aún no aplicadas en `main.ts` (TD-NEW-HTTP-SEC).
+  **CORS allowlist:** habilitado en el trabajo postentrega (2026-08-20) para aceptar los
+  orígenes del storefront/admin, lo que permitió conectar el admin a la API real sin
+  mocks; el registro de deuda `TD-NEW-HTTP-SEC` aún lista "sin CORS allowlist" y requiere
+  reconciliación documental (no se edita aquí por lifecycle del registro). El resto del
+  hardening HTTP de borde sigue pendiente.
 
 ## Estado real (no es producción lista)
 

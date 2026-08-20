@@ -7,7 +7,18 @@
 > afirmación de "producción estable" debe quedar pendiente hasta contar con esa
 > evidencia.
 
-- **Fecha de captura:** 2026-08-18
+> **ACTUALIZACIÓN 2026-08-20 (verificación postentrega):** los ítems de este
+> documento marcados como "pendiente de verificación / Running 0 / 0 imágenes /
+> incidente abierto" corresponden a la captura **histórica 2026-08-18** y fueron
+> resueltos en el trabajo postentrega verificado el 2026-08-20: el servicio ECS
+> quedó estable vía CI/CD (`api.merkee.shop/health` 200), ECR con imagen publicada,
+> dominios resueltos (`merkee.shop` 301→`www.merkee.shop`; `www` y `admin` 200),
+> CORS habilitado y prefijo `/v1` corregido. El estado vigente y honesto está en
+> `README.md` → **Estado de entrega y trabajo postentrega**. Este documento se
+> conserva como línea base histórica; no borra trazabilidad. La evidencia de
+> 2026-08-20 es fechada y puede cambiar.
+
+- **Fecha de captura:** 2026-08-18 (histórica; ver actualización 2026-08-20 arriba)
 - **Región:** `us-east-1`
 - **Ambientes:** un único ambiente (cuenta de aprendizaje; ID `275201671637` según `AUDITORIA_AWS_MERKEE.md`, lectura read-only, sin mutación).
 - **Fuente de verdad del sistema:** `docs/specs/master_spec.md` (`validated-not-executed` / `revision-needed` según trazabilidad) y `docs/api/openapi.yaml`.
@@ -46,13 +57,13 @@ Estado consolidado de la auditoría read-only (`AUDITORIA_AWS_MERKEE.md`, 2026-0
 
 | Componente AWS | Propósito | Estado (requiere verificación en vivo) |
 |---|---|---|
-| **ECS Fargate** | Contenedor de la API | Task definition `merkee-backend-task` (revision 2 según specs; revision 1 según auditoría — discrepancia de revisiones pendiente de reconciliar). Servicio `merkee-backend-service` con `Desired: 1` pero `Running: 0` en la auditoría. Task role `merkee-backend-task-role` creado. **En despliegue / pendiente de verificación.** |
-| **ECR** | Registro de imágenes | Repositorio `merkee-backend-api` existe. Según auditoría: **0 imágenes** (bloqueante). Dockerfile multi-stage no-root con build local validado; push pendiente de verificación. |
+| **ECS Fargate** | Contenedor de la API | *Histórico 2026-08-18:* task definition `merkee-backend-task` (revision 2 según specs; revision 1 según auditoría — discrepancia de revisiones pendiente de reconciliar); servicio `merkee-backend-service` con `Desired: 1` pero `Running: 0` en la auditoría; task role `merkee-backend-task-role` creado; **en despliegue / pendiente de verificación**. *Verificado 2026-08-20:* servicio estable vía CI/CD, `api.merkee.shop/health` 200 (ver `README.md` → Estado de entrega y trabajo postentrega). |
+| **ECR** | Registro de imágenes | *Histórico 2026-08-18:* repositorio `merkee-backend-api` existía; según auditoría **0 imágenes** (bloqueante en esa fecha); Dockerfile multi-stage no-root con build local validado; push pendiente. *Verificado 2026-08-20:* imagen publicada vía CI/CD y servicio ECS estable (ver `README.md` → Estado de entrega y trabajo postentrega). |
 | **RDS PostgreSQL** | Base de datos | `merkee-db` (PostgreSQL 18.3, disponible). Riesgo: auditoría indicó `PubliclyAccessible=True` (TD-AWS-RDS-PUBLIC, no se afirma corrección). Endpoint/SG en auditoría: `sg-0ba7750721b6422a0`, puerto 5432. |
 | **S3 + CloudFront/OAC** | Hosting SPAs y media | Buckets `merkee-frontend-client` (CloudFront `E32P11SX9DFU82` → `merkee.shop`) y `merkee-frontend-admin` (CloudFront `E119IKP00L5RU` → `admin.merkee.shop`) desplegados. Bucket de media `merkee-media` referenciado en el ecosistema (nombre canónico del proyecto; verificar existencia/estado en vivo). `aws-s3-tickets-images` queda excluido (no pertenece al proyecto). |
 | **Secrets Manager** | Secretos de app | Secreto `merkee/app` creado y referenciado por la task definition vía mapeo `secrets` JSON. **No se exponen valores.** Variables inyectadas: las del cuadro de `Variables de entorno` del API README (solo nombres). |
 | **CloudWatch** | Logs/métricas | Log group `/ecs/merkee-backend-task` creado (0 bytes en auditoría). Alarms/observabilidad no configuradas (TD-AWS-OBSERVABILITY). Local: bridge Prometheus (`prom-client`). |
-| **Route53 / ACM** | DNS / TLS | DNS gestionado en Spaceship (no Route53). `api.merkee.shop`, `merkee.shop`, `admin.merkee.shop` existen. `swagger.merkee.shop` pendiente de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
+| **Route53 / ACM** | DNS / TLS | DNS gestionado en Spaceship (no Route53). `api.merkee.shop`, `merkee.shop`, `www.merkee.shop`, `admin.merkee.shop` existen. *Verificado 2026-08-20:* `merkee.shop` redirige 301 a `www.merkee.shop`; `www.merkee.shop` y `admin.merkee.shop` responden 200; `api.merkee.shop/health` 200. `swagger.merkee.shop` pendiente de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
 | **IAM / OIDC** | Identidad de carga de trabajo | Role OIDC de GitHub `merkee-github-actions-deploy` con trust ajustado a subjects GitHub reales (con IDs). Task role `merkee-backend-task-role` creado. Perfil local AWS CLI `merkee`. |
 | **GitHub Actions** | CI/CD | Workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó (TD-AWS-ECS-VALIDATION). |
 | **SNS/SQS/DLQ / KMS** | Efectos desacoplados / cifrado | Pendientes de configuración AWS. Lógica de reintentos/idempotencia es local; sin Step Functions (ADR-007). |
@@ -63,7 +74,7 @@ Estado consolidado de la auditoría read-only (`AUDITORIA_AWS_MERKEE.md`, 2026-0
 
 ## 3. Acciones realizadas (configuración infraestructura)
 
-Acciones de configuración reportadas como ejecutadas. **Requieren verificación contra AWS en vivo** (la auditoría read-only previa no las confirma todas, p. ej. ECR sin imágenes, RDS público, Secrets Manager vacío en la auditoría — posiblemente anterior a estas acciones).
+Acciones de configuración reportadas como ejecutadas. **Requieren verificación contra AWS en vivo** (la auditoría read-only previa no las confirma todas, p. ej. ECR sin imágenes, RDS, Secrets Manager vacío en la auditoría — posiblemente anterior a estas acciones). *Nota 2026-08-20:* el ECR con imagen y el ECS estable fueron verificados en el trabajo postentrega (ver `README.md` → Estado de entrega y trabajo postentrega); la auditoría de 2026-08-18 quedó superada en esos ítems.
 
 1. **Security Group ECS → RDS (`TCP 5432`):** regla de salida/entrada para que la tarea ECS alcance `merkee-db` por 5432. *Verificar SG de la tarea y del RDS en vivo; la auditoría listó SG `sg-0ba7750721b6422a0` en RDS.*
 2. **Mapeo de Secrets:** task definition `merkee-backend-task` (revision 2) con `secrets` JSON apuntando al secreto `merkee/app` de Secrets Manager; las variables de entorno de la app se inyectan desde ese secreto (no de `.env` local). *No se documentan ni exponen valores.*
@@ -76,9 +87,13 @@ Acciones de configuración reportadas como ejecutadas. **Requieren verificación
 
 ---
 
-## 4. Incidente actual (ECS)
+## 4. Incidente actual (ECS) — *HISTÓRICO 2026-08-18, resuelto en postentrega 2026-08-20*
 
-> Estado del incidente basado en el reporte operativo. **Requiere verificación en AWS en vivo**; no se afirma resolución.
+> **Estado del incidente (histórico 2026-08-18):** el reporte operativo de esa fecha
+> describía fallos de arranque ECS. **Resuelto en el trabajo postentrega verificado el
+> 2026-08-20:** el servicio ECS quedó estable vía CI/CD con `api.merkee.shop/health` 200
+> (ver `README.md` → Estado de entrega y trabajo postentrega). Se conserva el detalle
+> histórico abajo para trazabilidad; no representa el estado vigente.
 
 - **Síntoma:** ECS arranca el contenedor NestJS, pero el servicio entra en **rollback / circuit breaker** (la tarea no alcanza estado estable; `Running` no igual a `Desired`).
 - **Fase 1 — P1001 (conectividad RDS):** error Prisma `P1001` ("Can't reach database server") por conectividad a `merkee-db`. **Reportado como ya corregido** (acción §3.1 SG ECS→RDS 5432). *Verificar conectividad real desde el task role antes de cerrar.*
@@ -98,7 +113,11 @@ Acciones de configuración reportadas como ejecutadas. **Requieren verificación
 
 ---
 
-## 5. Próximos pasos exactos (para cerrar el incidente)
+## 5. Próximos pasos exactos (para cerrar el incidente) — *HISTÓRICO 2026-08-18*
+
+> Los pasos abajo correspondían al cierre del incidente ECS de 2026-08-18. Fueron
+> ejecutados/verificados en el trabajo postentrega 2026-08-20 (ECS estable, `/health`
+> 200, puertos/CORS/`/v1` alineados). Se conservan como línea base histórica.
 
 1. **Publicar / verificar `/health`:** confirmar que la imagen en ECR incluye `GET /health` (reconstruir y pushear si la imagen desplegada es anterior a la adición del `HealthController`); corregir el comentario stale del `Dockerfile` (fuera de alcance de este doc, pero requerido).
 2. **Alinear puerto del contenedor a 3000:** la app escucha en 3000; la task definition debe mapear el container port a `3000` (no 80) o el target group debe apuntar a 3000.
@@ -118,7 +137,7 @@ Acciones de configuración reportadas como ejecutadas. **Requieren verificación
 - **Sesiones:** JWT acceso ≤10 min en memoria; refresh/cart token opaco `HttpOnly; Secure; SameSite=Lax`; Argon2id.
 - **RBAC:** `admin`/`cliente`; el admin no accede a carrito/checkout/órdenes propias.
 - **RDS:** riesgo `PubliclyAccessible=True` pendiente de corregir a `False` antes de producción (TD-AWS-RDS-PUBLIC).
-- **HTTP edge:** protecciones helmet/CSP/HSTS/nosniff, CORS allowlist, CSRF, rate limiting de login/registro/reset/activación aún pendientes (TD-NEW-HTTP-SEC).
+- **HTTP edge:** protecciones helmet/CSP/HSTS/nosniff, CSRF, rate limiting de login/registro/reset/activación aún pendientes (TD-NEW-HTTP-SEC). **CORS allowlist:** habilitado en el trabajo postentrega (2026-08-20) para aceptar los orígenes del storefront/admin, lo que permitió conectar el admin a la API real sin mocks; el registro de deuda `TD-NEW-HTTP-SEC` aún lista "sin CORS allowlist" y requiere reconciliación documental (no se edita aquí por lifecycle del registro). El resto del hardening HTTP de borde sigue pendiente.
 
 ---
 
@@ -141,10 +160,15 @@ Acciones de configuración reportadas como ejecutadas. **Requieren verificación
 
 ## 8. Pendientes de verificación (no bloqueantes para este doc, sí para producción)
 
-- ECR con imagen vigente que incluya `GET /health` (TD-AWS-ECS-VALIDATION).
-- ECS `running == desired` y sin rollback/circuit breaker.
-- RDS `PubliclyAccessible=False` y conectividad ECS→RDS verificada.
-- Secrets Manager poblado (`merkee/app`) y mapeado en task definition.
-- CloudWatch alarms/observabilidad (TD-AWS-OBSERVABILITY).
-- `swagger.merkee.shop` resuelto (TD-AWS-SWAGGER-DNS).
-- Revalidación focalizada de Spec Validator tras MSF-ID-003.
+> *Actualización 2026-08-20:* los ítems de ECR, ECS, health check, dominios, CORS y
+> prefijo `/v1` fueron verificados en el trabajo postentrega (ver `README.md` →
+> Estado de entrega y trabajo postentrega). Los ítems de deuda AWS y de proceso
+> permanecen abiertos según `docs/specs/technical_debt.md`.
+
+- **ECR con imagen vigente que incluya `GET /health`** — *Verificado 2026-08-20:* imagen publicada vía CI/CD; ECS estable con `/health` 200. La entrada `TD-AWS-ECS-VALIDATION` en `docs/specs/technical_debt.md` sigue `active` y requiere reconciliación documental (no se edita aquí por lifecycle del registro).
+- **ECS `running == desired` y sin rollback/circuit breaker** — *Verificado 2026-08-20* (estable vía CI/CD).
+- **RDS `PubliclyAccessible=False`** y conectividad ECS→RDS verificada — **Pendiente** (TD-AWS-RDS-PUBLIC sigue `active`).
+- **Secrets Manager poblado (`merkee/app`)** y mapeado en task definition — mapeo presente desde 2026-08-18; población en vivo por confirmar.
+- **CloudWatch alarms/observabilidad** (TD-AWS-OBSERVABILITY) — **Pendiente.**
+- **`swagger.merkee.shop` resuelto** (TD-AWS-SWAGGER-DNS) — **Pendiente.**
+- **Revalidación focalizada de Spec Validator** tras MSF-ID-003 — **Pendiente.**
