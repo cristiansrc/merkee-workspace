@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: merkee.shop API
   version: 0.1.0-planning
-  description: Contrato canónico de API Design First. Todos los valores monetarios son COP enteros. Ningún endpoint acepta datos crudos de tarjeta. Toda acción válida de usuario asociada a una sesión renueva su tiempo de inactividad de 10 minutos y las reservas ACTIVE; los webhooks del proveedor no. Los holds CHECKOUT_PENDING permanecen hasta que el pago o la conciliación alcanza un estado terminal. Las actualizaciones de categoría/producto/banner usan bloqueo optimista vía If-Match (el desajuste devuelve 409); los ajustes de stock quedan excluidos de ello.
+  description: Contrato canónico de API Design First. Todos los valores monetarios son COP enteros. Ningún endpoint acepta datos crudos de tarjeta. Toda acción válida de usuario autenticado (admin/cliente) renueva su sesión a 30 minutos de inactividad —decisión aprobada por el usuario 2026-08-21— y, cuando aplica, renueva sus reservas ACTIVE/carrito a 10 minutos; las sesiones de invitado y las reservas ACTIVE/carrito mantienen 10 minutos de inactividad. JWT de acceso sigue ≤10 minutos y solo en memoria. Los webhooks del proveedor no renuevan sesión ni reservas. Los holds CHECKOUT_PENDING permanecen hasta que el pago o la conciliación alcanza un estado terminal. Las actualizaciones de categoría/producto/banner usan bloqueo optimista vía If-Match (el desajuste devuelve 409); los ajustes de stock quedan excluidos de ello.
 servers:
   - url: https://api.merkee.shop/v1
 security: [{ bearerAuth: [] }]
@@ -131,11 +131,11 @@ paths:
     get:
       operationId: getCart
       tags: [Cart]
-      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }, {}]
       summary: Obtiene el carrito del servidor y la expiración de la reserva activa para la sesión actual autenticada o de invitado.
-      description: 'Efecto secundario: un acceso válido al carrito/sesión renueva su tiempo de inactividad a 10 minutos. No se persiste ningún carrito, ítem de carrito ni reserva en el almacenamiento del navegador.'
+      description: 'Accesible como autenticado (bearer), invitado (cookie merkee_cart_session) o anónimo. Si la solicitud es anónima sin cookie, crea una sesión de invitado y emite Set-Cookie: merkee_cart_session. Efecto secundario: un acceso válido al carrito/sesión renueva su tiempo de inactividad — sesión autenticada (admin/cliente) a 30 minutos (decisión aprobada por el usuario 2026-08-21), sesión de invitado y reservas ACTIVE/carrito a 10 minutos; JWT de acceso sigue ≤10 minutos y solo en memoria —. No se persiste ningún carrito, ítem de carrito ni reserva en el almacenamiento del navegador.'
       x-idempotency: No aplica lectura; un acceso válido solo puede renovar la expiración de la misma sesión.
-      responses: { '200': { description: Carrito, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Carrito, headers: { Set-Cookie: { schema: { type: string }, description: 'Cookie de sesión de carrito de invitado (merkee_cart_session) solo cuando se crea una sesión de invitado anónima.' } }, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /cart/items:
     post:
       operationId: addCartItem
@@ -151,28 +151,28 @@ paths:
     put:
       operationId: setCartItemQuantity
       tags: [Cart]
-      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }, {}]
       summary: Establece la cantidad reservada para un producto existente; cero no es válido y debe usarse DELETE.
-      description: 'Efectos secundarios: ajusta atómicamente el delta de la reserva y `stock_reserved`; una disminución libera el delta. El acceso exitoso renueva la expiración de 10 minutos.'
+      description: 'Accesible como autenticado, invitado o anónimo. Si la solicitud es anónima sin cookie, crea una sesión de invitado y emite Set-Cookie: merkee_cart_session cuando aplica. Efectos secundarios: ajusta atómicamente el delta de la reserva y `stock_reserved`; una disminución libera el delta. El acceso exitoso renueva las reservas ACTIVE/carrito a 10 minutos y, si la sesión es autenticada (admin/cliente), renueva la sesión a 30 minutos (decisión aprobada por el usuario 2026-08-21; JWT de acceso sigue ≤10 minutos).'
       x-idempotency: 'Se requiere `Idempotency-Key`; la misma sesión, clave y cuerpo de solicitud canónico devuelven el CartResponse original; la reproducción divergente devuelve 409.'
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/SetCartItemQuantityRequest' } } } }
-      responses: { '200': { description: Carrito actualizado, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '422': { $ref: '#/components/responses/Unprocessable' }, '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '200': { description: Carrito actualizado, headers: { Set-Cookie: { schema: { type: string }, description: 'Cookie de sesión de carrito de invitado (merkee_cart_session) solo cuando se crea una sesión de invitado anónima.' } }, content: { application/json: { schema: { $ref: '#/components/schemas/CartResponse' } } } }, '400': { $ref: '#/components/responses/BadRequest' }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '422': { $ref: '#/components/responses/Unprocessable' }, '500': { $ref: '#/components/responses/InternalServerError' } }
     delete:
       operationId: removeCartItem
       tags: [Cart]
-      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }]
+      security: [{ bearerAuth: [] }, { cartSessionCookie: [] }, {}]
       summary: Elimina el ítem del carrito y libera su reserva.
-      description: 'Efecto secundario: marca la reserva como liberada y decrementa `stock_reserved` atómicamente. Una solicitud repetida con la misma clave de idempotencia tiene éxito sin un segundo decremento.'
+      description: 'Accesible como autenticado, invitado o anónimo. Si la solicitud es anónima sin cookie, crea una sesión de invitado y emite Set-Cookie: merkee_cart_session cuando aplica. Efecto secundario: marca la reserva como liberada y decrementa `stock_reserved` atómicamente. Una solicitud repetida con la misma clave de idempotencia tiene éxito sin un segundo decremento.'
       x-idempotency: 'Se requiere `Idempotency-Key`; la misma sesión/clave devuelve 204. La reproducción divergente devuelve 409.'
       parameters: [{ $ref: '#/components/parameters/ProductId' }, { $ref: '#/components/parameters/IdempotencyKey' }]
-      responses: { '204': { description: Reserva liberada }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
+      responses: { '204': { description: Reserva liberada, headers: { Set-Cookie: { schema: { type: string }, description: 'Cookie de sesión de carrito de invitado (merkee_cart_session) solo cuando se crea una sesión de invitado anónima.' } } }, '401': { $ref: '#/components/responses/Unauthorized' }, '403': { $ref: '#/components/responses/Forbidden', description: '403 ADMIN_STOREFRONT_PURCHASE_FORBIDDEN para admin; INITIAL_PASSWORD_CHANGE_REQUIRED cuando el admin debe cambiar la contraseña.' }, '404': { $ref: '#/components/responses/NotFound' }, '409': { $ref: '#/components/responses/Conflict' }, '410': { $ref: '#/components/responses/Gone' } , '500': { $ref: '#/components/responses/InternalServerError' } }
   /checkouts:
     post:
       operationId: createCheckout
       tags: [Checkout]
       summary: Consume los holds del carrito actual del servidor, crea el pedido/pago pendiente e inicializa el checkout del proveedor.
-      description: 'Efectos secundarios: bloquea las reservas activas del carrito, crea el pedido/pago y puede llamar al proveedor. Los precios, el costo de envío (5000 COP), `iva_cop = floor((items_subtotal_cop * 19 + 50) / 100)` (19%, HALF_UP al peso COP) y el total son instantáneas calculadas en el servidor; el IVA se aplica exactamente una vez al subtotal de los ítems. Requiere rol de cliente. Los holds CHECKOUT_PENDING convertidos persisten hasta que el pago o la conciliación alcanza un estado terminal; no expiran por el temporizador de inactividad de 10 minutos. Devuelve 422 y no crea ningún pago para una reserva expirada o un estado de checkout inválido.'
+      description: 'Efectos secundarios: bloquea las reservas activas del carrito, crea el pedido/pago y puede llamar al proveedor. Los precios, el costo de envío (5000 COP), `iva_cop = floor((items_subtotal_cop * 19 + 50) / 100)` (19%, HALF_UP al peso COP) y el total son instantáneas calculadas en el servidor; el IVA se aplica exactamente una vez al subtotal de los ítems. Requiere rol de cliente. Los holds CHECKOUT_PENDING convertidos persisten hasta que el pago o la conciliación alcanza un estado terminal; no expiran por el temporizador de inactividad de 10 minutos de las reservas ACTIVE/carrito (la sesión autenticada es 30 minutos, JWT ≤10 minutos, sin cambio). Devuelve 422 y no crea ningún pago para una reserva expirada o un estado de checkout inválido.'
       x-idempotency: 'Se requiere `Idempotency-Key` por intento de pago; la misma clave/cuerpo devuelve el mismo checkout pendiente.'
       parameters: [{ $ref: '#/components/parameters/IdempotencyKey' }]
       requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CreateCheckoutRequest' } } } }
