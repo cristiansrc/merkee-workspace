@@ -144,10 +144,11 @@ pero **no** constituye declaración de producción lista.
 ## Infraestructura AWS — estado de la infraestructura (un solo ambiente, us-east-1)
 
 > **Línea base histórica (revisado 2026-08-18):** el párrafo siguiente describe el
-> estado al cierre de la entrega del lunes 2026-08-17 y la captura de incidente del
-> 2026-08-18. **No es el estado vigente.** El estado verificado posterior (2026-08-20)
-> — ECS estable, `api.merkee.shop/health` 200, dominios resueltos, CORS y `/v1`
-> corregidos — está en la sección **Estado de entrega y trabajo postentrega**.
+> estado al cierre de la entrega del lunes 2026-08-18 y la captura de incidente del
+> 2026-08-18. **No es el estado vigente.** El estado verificado posterior (2026-08-21)
+> — ECS estable, ECR publicado, CORS allowlist + PUT, media real S3+CloudFront
+> `images.merkee.shop` + OAC, prefijo `/v1`, JWT guard real, cart guest→cliente —
+> está en la sección **Estado de entrega y trabajo postentrega**.
 
 > Estado real al 2026-08-18 (histórico): **AWS estaba configurado** en una cuenta de
 > aprendizaje, región `us-east-1`, **un único ambiente**. No se afirmó despliegue
@@ -162,30 +163,33 @@ pero **no** constituye declaración de producción lista.
 
 | Componente AWS | Propósito | Estado |
 |---|---|---|
-| **ECS Fargate** | Contenedor de la API | *Histórico 2026-08-18:* task definition `merkee-backend-task` **revision 2** con `taskRole` (`merkee-backend-task-role`), mapeo `secrets` JSON y health check `/health`; servicio `merkee-backend-service` en despliegue/pendiente de verificación. *Verificado 2026-08-20:* servicio estable vía CI/CD, `api.merkee.shop/health` 200 (ver sección **Estado de entrega y trabajo postentrega**). |
-| **ECR** | Registro de imágenes | *Histórico 2026-08-18:* repositorio `merkee-backend-api` existía; Dockerfile multi-stage no-root con **Prisma** y **OpenSSL**, endpoint `/health`, build local validado; push pendiente. *Verificado 2026-08-20:* imagen publicada vía CI/CD y servicio ECS estable (ver sección **Estado de entrega y trabajo postentrega**). |
-| **RDS PostgreSQL** | Base de datos gestionada | `merkee-db` existe (PostgreSQL). **Riesgo pendiente:** auditoría indicó `PubliclyAccessible=True`; no se afirma corrección (TD-AWS-RDS-PUBLIC). |
-| **S3 privado + CloudFront/OAC** | Hosting de las SPAs y media | Buckets `merkee-frontend-client` (CloudFront `E32P11SX9DFU82` → `merkee.shop`) y `merkee-frontend-admin` (CloudFront `E119IKP00L5RU` → `admin.merkee.shop`) desplegados. `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido. |
+| **ECS Fargate** | Contenedor de la API | *Histórico 2026-08-18:* task definition `merkee-backend-task` **revision 2** con `taskRole` (`merkee-backend-task-role`), mapeo `secrets` JSON y health check `/health`; servicio `merkee-backend-service` en despliegue/pendiente de verificación. *Verificado 2026-08-21:* servicio estable vía CI/CD, `api.merkee.shop/health` 200, ECS `running=desired=1` (ver §Estado de entrega y trabajo postentrega; commits `7fdb009`, `215b36b`, `932a71a`). |
+| **ECR** | Registro de imágenes | *Histórico 2026-08-18:* repositorio `merkee-backend-api` existía; Dockerfile multi-stage no-root con **Prisma** y **OpenSSL**, endpoint `/health`, build local validado; push pendiente (auditoría: 0 imágenes). *Verificado 2026-08-21:* imagen publicada vía CI/CD y servicio ECS estable (ver §Estado de entrega y trabajo postentrega). |
+| **RDS PostgreSQL** | Base de datos gestionada | `merkee-db` existe (PostgreSQL). **Riesgo pendiente:** auditoría indicó `PubliclyAccessible=True`; no se afirma corrección (TD-AWS-RDS-PUBLIC — **gate abierto**). |
+| **S3 privado + CloudFront/OAC** | Hosting de las SPAs y media | Buckets `merkee-frontend-client` (CloudFront `E32P11SX9DFU82` → `merkee.shop`) y `merkee-frontend-admin` (CloudFront `E119IKP00L5RU` → `admin.merkee.shop`) desplegados. *Verificado 2026-08-21:* bucket media privado + distribución **`images.merkee.shop`** con **OAC** + **CORS S3** (allowlist `merkee.shop`/`admin.merkee.shop`); imágenes resuelven `https://images.merkee.shop/<key>` (commits `91ed871`, `02167cd`). `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido. |
 | **Secrets Manager** | Secretos de aplicación | Secreto `merkee/app` creado y referenciado por la task definition (mapeo JSON `secrets`); no se exponen valores. Nombres de variables inyectadas: ver `projects/merkee-shop-api/README.md` (solo nombres). |
-| **CloudWatch** | Logs y métricas | Log group `/ecs/merkee-backend-task` creado. **Pendiente:** alarms/observabilidad no configuradas (TD-AWS-OBSERVABILITY). Localmente el bridge de métricas usa `prom-client` (Prometheus). |
-| **Route53 / ACM** | DNS y certificados TLS | DNS gestionado en **Spaceship** (no Route53); `api.merkee.shop`, `merkee.shop`, `www.merkee.shop` y `admin.merkee.shop` existen. *Verificado 2026-08-20:* `merkee.shop` redirige 301 a `www.merkee.shop`; `www.merkee.shop` y `admin.merkee.shop` responden 200; `api.merkee.shop/health` 200. `swagger.merkee.shop` **pendiente** de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
+| **CloudWatch** | Logs y métricas | Log group `/ecs/merkee-backend-task` creado. **Pendiente:** alarms/observabilidad no configuradas (TD-AWS-OBSERVABILITY — **gate abierto**). Localmente el bridge de métricas usa `prom-client` (Prometheus). |
+| **Route53 / ACM** | DNS y certificados TLS | DNS gestionado en **Spaceship** (no Route53); `api.merkee.shop`, `merkee.shop`, `www.merkee.shop` y `admin.merkee.shop` existen. *Verificado 2026-08-21:* `merkee.shop` redirige 301 a `www.merkee.shop`; `www.merkee.shop` y `admin.merkee.shop` responden 200; `api.merkee.shop/health` 200; `images.merkee.shop` resuelve vía CloudFront OAC. `swagger.merkee.shop` **pendiente** de distribución/origen (TD-AWS-SWAGGER-DNS). ACM wildcard `*.merkee.shop` válido. |
 | **IAM / OIDC** | Identidad de carga de trabajo y acceso | Role IAM OIDC de GitHub `merkee-github-actions-deploy` con trust ajustado a subjects GitHub reales (con IDs). Task role `merkee-backend-task-role` creado. Perfil local AWS CLI `merkee` (Agent Toolkit/MCP). |
-| **GitHub Actions** | CI/CD | Workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó (TD-AWS-ECS-VALIDATION). |
+| **GitHub Actions** | CI/CD | Workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. *Verificado 2026-08-21:* runs exitosos post-2026-08-18 (ver §Estado de entrega y trabajo postentrega; commits `7fdb009`/`215b36b`/`932a71a`/`8948426`/`fe0b121`). CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados. No se declara producción lista (TD-AWS-ECS-VALIDATION sigue gate documental). |
 | **SNS/SQS/DLQ selectivo** | Efectos desacoplados (outbox, reintentos) | Pendiente de configuración AWS. La lógica de reintentos/idempotencia es local; sin Step Functions (ADR-007). |
 | **KMS** | Cifrado en reposo / sobres de secreto | Pendiente de configuración AWS. |
 
-### Problemas y pendientes de despliegue (AWS)
+### Problemas y pendientes de despliegue (AWS) — actualizado 2026-08-21
 
-- **Alineación de puerto:** API, ALB y target group deben coincidir en el puerto
-  **3000** (fallos previos de ECS por desajuste de puertos).
-- **Health check:** confirmar que el endpoint `/health` responde y está
-  configurado en la target group / task definition.
-- **Verificación ECS:** confirmar servicio en estado **1/1** (running estable)
-  y `api.merkee.shop` accesible.
-- **Deuda AWS:** RDS expuesto públicamente (`PubliclyAccessible=True`),
-  distribución DNS de `swagger.merkee.shop` pendiente y **alarmas/observabilidad
-  CloudWatch** no configuradas (TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS,
-  TD-AWS-OBSERVABILITY).
+- **Resueltos 2026-08-21:** alineación de puerto **3000** (app/ALB/target group), health
+  check `/health` operativo, CORS allowlist con **PUT** (`main.ts` `credentials:true`),
+  prefijo `/v1` (`app.setGlobalPrefix('v1')`), `cookie-parser` + `TransportAuthGuard`
+  con `JwtPort.verify` + `clearCookie` en logout, media real vía `images.merkee.shop`
+  OAC (commits `7fdb009`, `215b36b`, `932a71a`, `91ed871`, `02167cd`).
+- **Deuda AWS vigente (gates abiertos, no bloquean desarrollo, sí producción):**
+  RDS expuesto públicamente (`PubliclyAccessible=True`, TD-AWS-RDS-PUBLIC),
+  `swagger.merkee.shop` pendiente (TD-AWS-SWAGGER-DNS) y **alarmas/observabilidad
+  CloudWatch** no configuradas (TD-AWS-OBSERVABILITY). Ver `docs/specs/technical_debt.md`.
+- **Verificación fresca requerida:** cualquier afirmación de "producción estable"
+  requiere re-verificación en vivo (ECS running/desired, health, logs, dominios,
+  CloudFront media) al momento de la lectura — evidencia fechada 2026-08-21 puede
+  cambiar.
 
 **Implementado localmente (no requiere AWS):** scheduler diario de purga de
 `idempotency_records` como driving adapter cableado al arranque (`setTimeout`,
@@ -196,98 +200,178 @@ multi-stage no-root de la API con build local validado.
 ## Estado de entrega y trabajo postentrega
 
 > **Advertencia de frescura:** la evidencia operativa citada abajo fue verificada el
-> **2026-08-20** y es **fechada**; el estado de los servicios en AWS puede cambiar sin
+> **2026-08-21** y es **fechada**; el estado de los servicios en AWS puede cambiar sin
 > aviso. No constituye declaración de producción lista. La fuente de verdad del sistema
 > sigue siendo `docs/specs/master_spec.md` y `docs/api/openapi.yaml`.
 
-### 1. Estado al entregar (lunes 2026-08-17)
+### 1. Estado al entregar (lunes 2026-08-18)
 
-El lunes 2026-08-17 se entregaron los componentes (API NestJS, storefront React SPA,
+El lunes 2026-08-18 se entregaron los componentes (API NestJS, storefront React SPA,
 admin React + Refine SPA) e infraestructura base AWS. **No se afirmó estabilidad final
 ni despliegue productivo terminado.** Según la documentación histórica (README
 §Infraestructura AWS y `docs/DEPLOYMENT_STATUS.md`, captura 2026-08-18):
 
-- El servicio **ECS** presentaba fallos de arranque (Prisma/RDS/puertos) y estaba en
-  despliegue/pendiente de verificación (`Running` no confirmado en `1/1`).
-- **ECR** tenía la imagen pendiente de push/verificación.
-- **Dominios** (`api.merkee.shop`, `admin.merkee.shop`, `merkee.shop`) existían pero su
-  resolución y estabilidad estaban pendientes de verificación; el despliegue de
-  storefront/admin en CloudFront/S3 estaba reportado como desplegado sin validación de
-  extremo a extremo.
-- **CORS** y el **prefijo `/v1`** del API figuraban como pendientes/correctivos en
-  trabajo posterior.
-- El **admin** dependía de datos/mocks de desarrollo y no estaba conectado a la API real
-  de producción en ese momento.
+- **API local OK:** NestJS + Prisma + tests locales en verde, pero **AWS no operativo**.
+- **ECR 0 imágenes:** repositorio `merkee-backend-api` existía **sin imagen publicada**
+  (auditoría 2026-08-18: `0 imágenes`, bloqueante).
+- **ECS 1/0:** servicio `merkee-backend-service` `desired 1 / running 0`, en
+  rollback/circuit breaker (fallos de arranque Prisma/RDS/puertos).
+- **Puertos/health desalineados:** app escuchando en **3000** (`main.ts`/`EXPOSE 3000`),
+  task definition mapeada a **80**, target group a **8080**; health check del target
+  group no apuntaba a `/health`.
+- **DNS/CORS/media fake:** `api.merkee.shop` sin CNAME estable al ALB (verificado
+  301 a `www.merkee.shop`); **CORS sin allowlist** (bloqueaba `merkee.shop` y
+  `admin.merkee.shop`); media con `FakeS3MediaStorageAdapter` (S3 real no configurado,
+  imágenes con `url` vacía).
+- **Admin mocks forzados:** panel admin con `VITE_USE_MOCKS=true` forzado, desacoplado
+  de la API real; pantalla blanca por `TransportAuthGuard` sin verificación JWT
+  (`a13625e`/`83fe06a` previos — solo presencia regex `Bearer`).
+- **Carrito guest roto:** `TransportAuthGuard` solo regex, `cookie-parser` ausente en
+  `package.json`/`main.ts` (`req.cookies` `undefined` en runtime), `actor=null` en
+  `GET /me`/`PATCH /me`/`logout`/`password-change`; `POST /cart` y `GET /cart` guest
+  devolvían **401/GONE** sin creación de `merkee_cart_session`.
+- **Checkout stub:** `POST /checkouts` stub sin snapshots completos (IVA/entrega/total),
+  sin transferencia de carrito guest→cliente, sin idempotencia operativa ni validación
+  de `CHECKOUT_PENDING` vs `ACTIVE`.
+- **Imágenes url vacía:** `GET /v1/products` y `GET /v1/categories` devolvían
+  `images[].url = ""` (sin resolución S3→CloudFront); `PUT /cart/items/{productId}`
+  sin soporte completo.
+- **Sesión 10m:** tanto reservas `ACTIVE`/carrito como sesiones autenticadas
+  expiraban a **10 minutos** (sin distinción guest 10m vs cliente 30m).
+- **Categorías sin relación:** `adminUpdateProduct`/`adminCreateProduct` perdía la
+  relación `category` (faltaba `include` Prisma → `category: null` en respuesta).
+- **Banners desactivados:** listado de banners sin filtro `active`/`display_order`,
+  toggle `active` incompleto y sin paginación consistente.
 
-### 2. Trabajo postentrega verificado el 2026-08-20
+### 2. Trabajo postentrega verificado el 2026-08-21
 
-Trabajo de estabilización y cierre de incidentes ejecutado y verificado el 2026-08-20
-(evidencias fechadas; pueden cambiar):
+Trabajo de estabilización y cierre de incidentes ejecutado y verificado el **2026-08-21**
+(evidencias fechadas; pueden cambiar). **No se declara producción lista** — ver gates
+abiertos abajo.
 
-- **API ECS estable vía CI/CD:** el servicio `merkee-backend-service` quedó estable por
-  el pipeline de GitHub Actions; `api.merkee.shop/health` responde **200**.
-- **Storefront y admin en CloudFront/S3:** distribuciones CloudFront sobre buckets S3
-  para el portal (`merkee.shop` / `www.merkee.shop`) y el panel (`admin.merkee.shop`).
-- **DNS y routing:** `merkee.shop` redirige **301** a `www.merkee.shop`; `www.merkee.shop`
-  y `admin.merkee.shop` responden **200**. SPA fallback configurado en ambas SPAs.
-- **Corrección pantalla blanca del admin:** se corrigió el fallo de render (pantalla
-  blanca) del panel administrativo.
-- **Admin conectado a la API real sin mocks:** el panel admin consume la API desplegada
-  (`api.merkee.shop`) con datos reales, sin adaptadores mock.
-- **CORS configurado:** el API acepta los orígenes del storefront/admin (habilita la
-  comunicación real frontend↔API).
-- **Prefijo `/v1` corregido:** el routing del API usa el prefijo `/v1` conforme al
-  `servers.url` del OpenAPI (`https://api.merkee.shop/v1`).
-- **Workflows GitHub Actions exitosos:** los pipelines de API y admin finalizaron con
-  éxito. Commits relevantes del trabajo postentrega:
-  - `6330489` (API)
-  - `aec6283` (API)
-  - `7fdb009` (admin)
-  - `215b36b` (admin)
+- **ECS estable + ECR publicado:** servicio `merkee-backend-service` estable vía CI/CD,
+  `api.merkee.shop/health` responde **200** (`{"status":"ok"}` sin auth ni BD);
+  imagen publicada en `merkee-backend-api` (continúa lo verificado 2026-08-19/20). Commits
+  base ya visibles: `7fdb009` (allow frontend origins with credentials), `215b36b`
+  (expose routes under `v1` prefix).
+- **CORS allowlist + PUT:** `main.ts` con `origin` allowlist (`merkee.shop`,
+  `www.merkee.shop`, `admin.merkee.shop`, `localhost`) + `credentials:true` +
+  `methods` incluyendo **PUT** (fix `PUT /cart/items/{productId}` y preflight storefront).
+  Ver `932a71a` (enable real session authentication) y `7fdb009`.
+- **Media real S3+CloudFront `images.merkee.shop` + OAC + CORS S3:** bucket media
+  privado + distribución CloudFront `images.merkee.shop` con OAC, CORS S3
+  (`GET/PUT` desde orígenes allowlist), `BucketOwnerEnforced` sin ACL. Imágenes ahora
+  resuelven `https://images.merkee.shop/<key>` en lugar de `url` vacía. Commits
+  verificados: `91ed871` (remove ACL from bucket-owner-enforced uploads),
+  `02167cd` (resolve image URLs through CloudFront).
+- **Prefijo `/v1`:** routing del API bajo `app.setGlobalPrefix('v1')` conforme a
+  `servers.url` del OpenAPI (`https://api.merkee.shop/v1`). Commit `215b36b`.
+- **JWT guard real + cookie-parser + clearCookie:** `cookie-parser` añadido a
+  `package.json`/`main.ts` (`app.use(cookieParser())`), `TransportAuthGuard`
+  reescrito para invocar `JwtPort.verify` → `Result<JwtPayload, DomainError>` y
+  asignar `req.user`; `POST /v1/auth/logout` emite `clearCookie` (`Max-Age=0`)
+  para `merkee_refresh_session`. Commits `932a71a`, `9e3ad3e` (persist session
+  activity timestamp).
+- **Register cliente `must_change_password=false`:** `POST /v1/auth/register`
+  público crea exclusivamente `cliente` con `must_change_password=false` (no `true`
+  como admin), alineado con `operation-map.ts`. Commit `f62cee4` (expose public
+  customer registration) + `57c95b1` (align specs with cart transfer contracts).
+- **Cart guest→cliente transfer + checkout real:** `POST /v1/auth/login` promueve
+  carrito guest→cliente (transfiere items/reservas del `merkee_cart_session` al
+  carrito del cliente en una única transacción); `POST /v1/checkouts` acepta
+  `guest_session_id` (cookie o body) y convierte `ACTIVE→CHECKOUT_PENDING` con
+  snapshots `items_subtotal_cop` + `delivery_fee_cop:5000` + `iva_cop` HALF_UP.
+  Commits `9df9187` (support anonymous guest sessions), `400a711` (support guest
+  checkout and complete item details), `8948426` (enable guest cart transfer for
+  checkout), `fe0b121` (complete cart transfer and payment checkout contracts),
+  `57c95b1`.
+- **Cart session 30m inactividad:** toda acción válida de usuario autenticado
+  (admin/cliente) renueva su sesión a **30 minutos** de inactividad (antes 10m);
+  reservas `ACTIVE`/carrito siguen a **10m**; invitados mantienen 10m; JWT de
+  acceso sigue ≤10 min solo en memoria. Webhooks no renuevan. Commit `580ff8f`
+  (extend inactivity session to 30 minutes) + `9e3ad3e` (`last_active_at`).
+- **CloudFront OAC media + S3 CORS:** distribución media con OAC verificada y
+  política de bucket permitiendo solo CloudFront; CORS de bucket permite
+  `GET/PUT` desde dominios allowlist. Ya incluido en `91ed871`/`02167cd`.
+- **Workspace `openapi.yaml` guest anonymous:** paths `/cart` (`GET`), `/cart/items`
+  (`POST`/`PUT`/`DELETE`) declaran `security: [{bearerAuth: []}, {cartSessionCookie: []}, {}]` —
+  documenta sesión anónima que crea `merkee_cart_session` vía `Set-Cookie` cuando
+  no existe (commit `d4b438f` workspace + `9df9187`/`57c95b1` en API).
+- **Eliminación soft-delete operativa + imágenes resueltas:** `DELETE /admin/products/{id}`
+  y `DELETE /admin/categories/{id}` con soft-delete real (no stub), bloqueo de
+  categoría con productos activos → 409, reconstrucción de imágenes con URL
+  CloudFront. Commits `2601833` (preserve product category relationship),
+  `02167cd`.
+- **Auth admin/storefront:** admin conecta a API real (`VITE_USE_MOCKS=false`,
+  `api.merkee.shop/v1`), pantalla blanca corregida (`6330489` mount router before
+  refine, `aec6283` use production api instead of forced mocks), storefront con
+  `refresh` silencioso y preservación de auth (`04cdeaf` storefront), `recover
+  expired sessions` (`0090288`), `logout` (`a82f8d5`), `checkout continue`
+  (`31074e5`/`b37b280`/`acd8cbc` send guest session on auth), `b7febd7` admin
+  preserve product category selection.
+- **Banners toggle:** `adminCreateBanner`/`adminUpdateBanner` con `active` +
+  `display_order` + `target_path`, toggle operativo y `GET /banners` filtra `active`
+  por `display_order` (ver `technical_debt.md` pendiente de gate legal/observabilidad,
+  no de banners).
+- **CI runs verificados:** workflows GitHub Actions (API/storefront/admin) con runs
+  exitosos post-2026-08-18 (OIDC `merkee-github-actions-deploy`). Evidencia fechada
+  2026-08-21, puede cambiar:
+  - API: https://github.com/cristiansrc/merkee-shop-api/actions — commits
+    `7fdb009`, `215b36b`, `932a71a`, `9e3ad3e`, `91ed871`, `02167cd`, `2601833`,
+    `580ff8f`, `9df9187`, `400a711`, `f62cee4`, `9faad46`, `8948426`, `fe0b121`,
+    `57c95b1`
+  - Storefront: https://github.com/cristiansrc/merkee-shop-storefront/actions —
+    `b37b280`, `0090288`, `a82f8d5`, `acd8cbc`
+  - Admin: https://github.com/cristiansrc/merkee-shop-admin/actions — `6330489`,
+    `aec6283`, `b7febd7`
 
-  Enlaces a los workflows (evidencia fechada, puede cambiar):
-  - API: https://github.com/cristiansrc/merkee-shop-api/actions
-  - Storefront: https://github.com/cristiansrc/merkee-shop-storefront/actions
-  - Admin: https://github.com/cristiansrc/merkee-shop-admin/actions
+### 3. Estado actual honesto (2026-08-21)
 
-### 3. Estado actual honesto (2026-08-20)
+El sistema **no** está declarado listo para producción. Lo verificado hasta ahora
+(fresco al 2026-08-21):
 
-El sistema **no** está declarado listo para producción. Lo verificado hasta ahora:
-
-- El **frontend renderiza** (storefront y admin cargan y responden 200).
-- La **API pública** (`/v1/categories`, `/v1/products`) responde **200** pero devuelve
-  **listas vacías** (sin datos sembrados/seed productivo ni catálogo poblado).
-- El **login real** requiere credenciales válidas; no hay credenciales de prueba
-  públicas ni seed de usuario cliente/admin poblado.
-- **Pendiente de validación funcional completa:** flujo de sesiones, carrito servidor,
-  checkout, pagos (Wompi/Mercado Pago) y órdenes no han sido validados de extremo a
-  extremo contra la API desplegada.
-- **Bugs conocidos abiertos:** comportamiento de sesiones, carrito y pagos requiere
-  verificación/corrección; el seed de datos (catálogo, usuario admin/cliente) está
-  pendiente.
+- **Frontends renderizan:** storefront (`merkee.shop` 301→`www.merkee.shop` 200) y
+  admin (`admin.merkee.shop` 200) cargan vía CloudFront/S3 con SPA fallback.
+- **API pública:** `GET https://api.merkee.shop/health` **200**; `GET /v1/categories`
+  y `GET /v1/products` **200** con imágenes resueltas a `https://images.merkee.shop/<key>`
+  (no más `url` vacía), categorías con relación preservada.
+- **Auth real:** `POST /v1/auth/register` (cliente `must_change_password=false`),
+  `POST /v1/auth/login` (guest→cliente transfer), `POST /v1/auth/refresh` (cookie
+  `HttpOnly`), `POST /v1/auth/logout` (`clearCookie`), `TransportAuthGuard` con
+  `JwtPort.verify` y `cookie-parser`.
+- **Carrito/checkout:** guest anónimo crea `merkee_cart_session` (`GET /cart` sin
+  cookie → 200 + `Set-Cookie`), `PUT /cart/items/{productId}` operativo con
+  `Idempotency-Key`, sesión autenticada renueva a **30m** (guest 10m), checkout con
+  guest transfer y `delivery_fee_cop:5000` + `iva_cop` HALF_UP.
+- **Pendiente de validación E2E completa:** pagos Wompi/Mercado Pago (webhooks
+  firmados + reconciliación 15m) y órdenes requieren validación E2E contra la API
+  desplegada con datos poblados (seed productivo pendiente; catálogo dummy local
+  6 categorías/15 productos/3 banners no equivale a producción).
 
 **Gates abiertos antes de declarar producción** (no bloquean desarrollo, sí producción):
-RDS expuesta públicamente (`PubliclyAccessible=True`, TD-AWS-RDS-PUBLIC), hardening HTTP
-de borde (helmet/CSP/HSTS/nosniff, CSRF, rate limiting — TD-NEW-HTTP-SEC; CORS ya
-habilitado en postentrega, ver §Seguridad), observabilidad/CloudWatch alarms
-(TD-AWS-OBSERVABILITY), email productivo (reemplazo de `NoopEmailAdapter`), proveedores
-de pago reales (reemplazo de `FakePaymentProviderAdapter`), retención/anonimización
-pendiente de revisión legal/contable (TD-MSF-ID-002-02), decisión operativa AWS del
-scheduler (TD-MSF-ID-002-03) y swagger DNS (TD-AWS-SWAGGER-DNS). Véase
-`docs/specs/technical_debt.md`.
+`PubliclyAccessible=True` de RDS `merkee-db` (TD-AWS-RDS-PUBLIC), hardening HTTP de
+borde (helmet/CSP/HSTS/nosniff, CSRF Origin/double-submit, rate limiting —
+TD-NEW-HTTP-SEC; **CORS allowlist + PUT ya habilitado en postentrega**, ver §Seguridad),
+observabilidad/CloudWatch alarms (TD-AWS-OBSERVABILITY), email productivo (reemplazo
+de `NoopEmailAdapter`), proveedores de pago reales (reemplazo de
+`FakePaymentProviderAdapter` — lógica de reintentos/refunds es local), retención/
+anonimización pendiente de revisión legal/contable (TD-MSF-ID-002-02), decisión
+operativa AWS del scheduler (TD-MSF-ID-002-03) y swagger DNS
+(TD-AWS-SWAGGER-DNS). Véase `docs/specs/technical_debt.md`. **Nada se declara
+producción lista.**
 
 ### 4. Enlaces y advertencia de frescura
 
-- Workflows (evidencia fechada 2026-08-20, puede cambiar):
+- Workflows (evidencia fechada **2026-08-21**, puede cambiar):
   - API: https://github.com/cristiansrc/merkee-shop-api/actions
   - Storefront: https://github.com/cristiansrc/merkee-shop-storefront/actions
   - Admin: https://github.com/cristiansrc/merkee-shop-admin/actions
-- Estado de despliegue histórico: `docs/DEPLOYMENT_STATUS.md` (captura 2026-08-18, marcada
-  como línea base histórica; el incidente ECS allí descrito quedó resuelto según la
-  verificación 2026-08-20).
+- Estado de despliegue: `docs/DEPLOYMENT_STATUS.md` (trazabilidad completa:
+  captura histórica 2026-08-18 + estado verificado 2026-08-21; el incidente ECS
+  allí descrito quedó resuelto según la verificación 2026-08-21).
 - **La evidencia operativa es fechada y puede cambiar.** Cualquier afirmación de
   "producción estable" requiere verificación en vivo renovada (ECS running/desired,
-  health check, logs, dominios) en el momento de la lectura.
+  health check, logs, dominios, CloudFront media) en el momento de la lectura.
 
 ## Seguridad
 
@@ -306,11 +390,15 @@ scheduler (TD-MSF-ID-002-03) y swagger DNS (TD-AWS-SWAGGER-DNS). Véase
 - **Pendiente (gate antes de producción):** protecciones HTTP de borde (helmet/CSP/HSTS/
   nosniff, CSRF Origin/double-submit, rate limiting de
   login/registro/reset/activación) aún no aplicadas en `main.ts` (TD-NEW-HTTP-SEC).
-  **CORS allowlist:** habilitado en el trabajo postentrega (2026-08-20) para aceptar los
-  orígenes del storefront/admin, lo que permitió conectar el admin a la API real sin
-  mocks; el registro de deuda `TD-NEW-HTTP-SEC` aún lista "sin CORS allowlist" y requiere
-  reconciliación documental (no se edita aquí por lifecycle del registro). El resto del
-  hardening HTTP de borde sigue pendiente.
+  **CORS allowlist + PUT:** habilitado en el trabajo postentrega **2026-08-21**
+  (`7fdb009`/`932a71a`: allowlist `merkee.shop`/`www`/`admin` + `credentials:true` +
+  `PUT`; media CORS S3 `91ed871`) — permitió conectar admin/storefront a la API real
+  sin mocks y habilitar `PUT /cart/items/{productId}`; el registro de deuda
+  `TD-NEW-HTTP-SEC` aún lista el resto del hardening HTTP y requiere reconciliación
+  documental (no se edita aquí por lifecycle del registro). El resto del hardening
+  de borde sigue pendiente.
+- **Sesión postentrega:** toda acción válida autenticada renueva **30m inactividad**
+  (`580ff8f`/`9e3ad3e`), guest y reservas `ACTIVE`/carrito 10m, JWT ≤10 min.
 
 ## Estado real (no es producción lista)
 

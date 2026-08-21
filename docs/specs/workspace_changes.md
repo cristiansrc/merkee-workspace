@@ -1,8 +1,9 @@
 # Workspace changes — MSF-ID-002
 
 **Lifecycle status:** `revision-needed`  
-**Actualizado:** 2026-08-16  
-**Spec Validator:** `pending`
+**Actualizado:** 2026-08-21  
+**Spec Validator:** `pending`  
+**Nota de frescura 2026-08-21:** rehidratación honesta postentrega sin cierre de gates. No se modifica código, AWS ni secretos. Lo verificado (ECS estable, ECR publicado, CORS allowlist + PUT, `images.merkee.shop` OAC, `register` cliente, cart guest→cliente transfer, sesión 30m) se documenta con commits verificados (`7fdb009`/`215b36b`/`932a71a`/`91ed871`/`02167cd`/`8948426`/`fe0b121`) en `README.md` y `docs/DEPLOYMENT_STATUS.md`. **No se declara producción lista** — gates `TD-AWS-RDS-PUBLIC`, `TD-AWS-OBSERVABILITY`, `TD-MSF-ID-002-02/03` siguen `active`.
 
 ## Cierre y consolidación — stab-closure-consolidation (SCC-A1–A7, 2026-08-16)
 
@@ -17,6 +18,21 @@ Incremento exclusivamente documental de cierre/consolidación del incremento `me
 ## Cambio descendente vigente
 
 El contrato global de idempotencia exige `idempotency_records.response_json` mínimo sin PII: `resource_id`, `status`, `activation_expires_at`, `body_hash`. El replay de provisión admin reconstruye la respuesta contractual desde el recurso actual. No se cambian rutas ni endpoints. **Sí hubo un cambio contractual aprobado por el usuario (Opción A, 2026-08-16):** se añadió `404 RESOURCE_NOT_FOUND` a `provisionAdminUser` (`POST /admin/users`) en OpenAPI (cambio de contrato de comunicación autorizado); el webhook conserva `204` idempotente a duplicados (sin añadir 409; solo aclaración documental de la descripción del 204).
+
+### Inicio del incremento `msf-admin-real-auth-and-cookie-guard` (2026-08-20)
+
+Incremento **documental y exclusivamente de comportamiento de transporte** para habilitar el flujo real de autenticación admin. **No introduce endpoints, módulos, migraciones, schemas OpenAPI, parámetros, reglas de negocio ni claims JWT nuevos.** Los paths/statuses/DTOs ya están declarados; este incremento ajusta la verificación del `TransportAuthGuard`, el middleware `cookie-parser` y la limpieza de cookie en `POST /v1/auth/logout`.
+
+- **Alcance exclusivo (verificado en disco 2026-08-20):**
+  - H1: `TransportAuthGuard` solo verifica presencia de `Authorization: Bearer <token>` (regex); no invoca `JwtPort.verify`; no asigna `req.user`. Endpoints autenticados reciben `actor=null`.
+  - H2: `IdentityController.getActor(req)` lee `req.user`, que H1 nunca asigna; `actor.id`/`actor.sessionId` quedan `null`/`''` en `GET /me`/`PATCH /me`/`logout`/`password-change`.
+  - H3: `cookie-parser` no está en `package.json`; `main.ts` no monta `app.use(cookieParser())`; `req.cookies` es `undefined` en runtime. `POST /v1/auth/refresh` siempre devuelve 401 en condiciones reales (los tests del controller usan `cookieRequest` mock que sí popula `req.cookies`).
+  - H4: `POST /v1/auth/logout` no emite `Set-Cookie` con `Max-Age=0`; la cookie `merkee_refresh_session` persiste tras logout hasta su `expires` natural.
+  - H5: la "pantalla blanca en `/`" reportada en el admin tiene causa raíz en H1-H4 (backend no identifica al principal); el fix del síntoma visual del admin queda documentado como pregunta abierta (Q-04) y se aborda en el proyecto `merkee-shop-admin` por separado.
+- **Decisiones DEC-01..DEC-09** documentadas en `docs/specs/increments/msf-admin-real-auth-and-cookie-guard-delta-spec.md` y replicadas en `docs/specs/.working/msf-admin-real-auth-and-cookie-guard-sdd-context.md`. **No se introduce patrón GoF nuevo** (continuidad del patrón ROP; STAB-B5 ya aplicado a `JwtPort.verify`); **no se requiere consulta formal al `solution-architect`** (DEC-09).
+- **No se cambian** OpenAPI, Prisma, migraciones 001–014, claims del JWT (`sub`/`session_id`/`role`), DTOs (`SessionResponse`, `LoginRequest`, `UserResponse`), ni el catálogo `DomainError`. `iss`/`aud`/`typ` y proveedor JWT siguen pendientes (STAB-DEC-12).
+- **Deudas activas preexistentes no se cierran** por este inicio: TD-NEW-ROP-SIGN, TD-NEW-HTTP-SEC, TD-NEW-COV, TD-MSF-ID-002-01/02/03, TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS, TD-AWS-OBSERVABILITY, TD-AWS-ECS-VALIDATION, TD-MSF-API-001, TD-MSF-ID-003-01. **Nueva deuda `TD-ADMIN-AUTH-001`** registrada en `docs/specs/technical_debt.md` (global) y espejo local como `active`, con responsable, condición de cierre y evidencia requerida.
+- **Gates abiertos:** Spec Validator `pending`; revalidación focalizada pendiente tras MSF-ID-003 + ADR-020 + este incremento. Aprobación humana del plan pendiente. Task board no creado. Handoff a Task Decomposer/Executor no habilitado. **No se modifican** rutas, endpoints, schemas, dependencias cross-service, código, OpenAPI, Prisma, `package.json`, runtime ni Git.
 
 ## Deuda técnica activa sincronizada
 
@@ -102,25 +118,28 @@ El usuario autoriza esta remediación controlada para romper el bloqueo circular
 
 Esta remediación controlada **no autoriza**: (1) nuevas funcionalidades, endpoints, módulos, migraciones, schemas, parámetros ni reglas de negocio; (2) el desbloqueo del task board general (permanece `blocked`); (3) despliegue u operación en producción; (4) operaciones de Git (commits, branches, PRs); (5) la modificación de código, Prisma, `package.json` ni runtime por parte del Planner; (6) handoff a otros agentes sin veredicto `ready` + aprobación humana; (7) declarar `ready` ni transicionar el incremento fuera de `planning`/`revision-needed`.
 
-## Avances de infraestructura AWS (2026-08-18) — estado operativo, no cambia el lifecycle de spec
+## Avances de infraestructura AWS (2026-08-18 histórico) + rehidratación 2026-08-21 — estado operativo, no cambia el lifecycle de spec
 
 > Nota: esta sección documenta **estado operativo de infraestructura AWS verificado**
 > y no altera el lifecycle de `workspace_changes.md` (`revision-needed`), ni la Master
 > Spec (`validated-not-executed`), ni el veredicto de Spec Validator (`pending`). No
 > constituye declaración de producción lista. No se ejecutaron operaciones de Git.
+> **Frescura:** captura histórica 2026-08-18 + verificación postentrega **2026-08-21**
+> (ver `README.md` §Estado de entrega y trabajo postentrega y
+> `docs/DEPLOYMENT_STATUS.md` §8). **No se declara producción lista.**
 
-Hechos confirmados (cuenta de aprendizaje, región `us-east-1`, un único ambiente):
+Hechos confirmados (históricos 2026-08-18, cuenta de aprendizaje, región `us-east-1`, un único ambiente):
 
 1. **Identidad/tooling:** Agent Toolkit/MCP AWS configurado; perfil local AWS CLI `merkee`. No se incluyen credenciales.
 2. **IAM OIDC GitHub:** role `merkee-github-actions-deploy` con trust ajustado a subjects GitHub reales (con IDs).
 3. **ECS task role:** `merkee-backend-task-role` creado.
 4. **Secrets Manager:** secreto `merkee/app` creado y referenciado por la task definition (mapeo `secrets` JSON); no se exponen valores.
-5. **ECS task definition:** `merkee-backend-task` **revision 2** configurada con `taskRole` y mapeo `secrets` JSON. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** (imagen y health check por confirmar). No se afirma despliegue terminado.
-6. **GitHub Actions:** workflows de API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados, pero **no se afirma** que el deploy final terminó.
+5. **ECS task definition:** hist. `merkee-backend-task` **revision 2** con `taskRole` y mapeo `secrets` JSON. Servicio `merkee-backend-service` **en despliegue / pendiente de verificación** en 2026-08-18 (imagen y health check por confirmar). **Verificado 2026-08-21:** servicio estable (`running=desired=1`, `/health` 200), ECR publicado, CORS allowlist + PUT (`7fdb009`/`932a71a`), prefijo `/v1` (`215b36b`).
+6. **GitHub Actions:** workflows API/storefront/admin migrados a OIDC; validación CI antes de deploy. CI anterior falló por OIDC/permissions y secreto CloudFront vacío; fixes aplicados. **Verificado 2026-08-21:** runs exitosos post-2026-08-18 (commits `7fdb009`/`215b36b`/`932a71a`/`9e3ad3e`/`91ed871`/`02167cd`/`8948426`/`fe0b121`/`57c95b1`).
 7. **Dockerfile API:** multi-stage no-root creado y **build local validado**.
-8. **S3 + CloudFront:** `merkee-frontend-client` / `E32P11SX9DFU82` → `merkee.shop`; `merkee-frontend-admin` / `E119IKP00L5RU` → `admin.merkee.shop`. `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido.
-9. **DNS/Dominio:** gestionado en Spaceship; `api.merkee.shop` y `admin.merkee.shop` existen; `swagger.merkee.shop` **pendiente** de distribución/origen.
-10. **RDS:** `merkee-db` existe; auditoría indicó `PubliclyAccessible=True` como riesgo pendiente; **no se afirma corrección**.
+8. **S3 + CloudFront:** hist. `merkee-frontend-client` / `E32P11SX9DFU82` → `merkee.shop`; `merkee-frontend-admin` / `E119IKP00L5RU` → `admin.merkee.shop`. **Verificado 2026-08-21:** bucket media privado + **`images.merkee.shop` OAC** + CORS S3 (allowlist), imágenes resuelven `https://images.merkee.shop/<key>` (`91ed871`/`02167cd`). `aws-s3-tickets-images` **no pertenece** al proyecto y queda excluido.
+9. **DNS/Dominio:** gestionado en Spaceship; `api.merkee.shop` y `admin.merkee.shop` existen; `swagger.merkee.shop` **pendiente** de distribución/origen (TD-AWS-SWAGGER-DNS). **Verificado 2026-08-21:** `api.merkee.shop/health` 200, `merkee.shop` 301→`www`, `www`/`admin` 200, `images.merkee.shop` vía OAC.
+10. **RDS:** `merkee-db` existe; auditoría indicó `PubliclyAccessible=True` como riesgo pendiente; **no se afirma corrección** (TD-AWS-RDS-PUBLIC — **gate abierto**).
 11. **Cobertura API:** última medición local confirmada — 125 suites / 1232 tests PASS; statements 93.36%, branches 84.43%, functions 93.01%, lines 93.57%. Etiquetado como medición local, no producción.
 
-Deuda AWS registrada (ver `docs/specs/technical_debt.md` y espejo local): TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS, TD-AWS-OBSERVABILITY, TD-AWS-ECS-VALIDATION. TD-MSF-ID-002-03 permanece `active` (falta decisión de coordinación/reemplazo del scheduler, ownership, alarms y prevención de doble ejecución); la configuración parcial de AWS no lo cierra.
+Deuda AWS registrada (ver `docs/specs/technical_debt.md` y espejo local): TD-AWS-RDS-PUBLIC, TD-AWS-SWAGGER-DNS, TD-AWS-OBSERVABILITY, TD-AWS-ECS-VALIDATION. TD-MSF-ID-002-03 permanece `active` (falta decisión de coordinación/reemplazo del scheduler, ownership, alarms y prevención de doble ejecución); la configuración parcial de AWS no lo cierra. **Verificado 2026-08-21:** CORS allowlist+PUT, `cookie-parser`+`JwtPort.verify`+`clearCookie`, `register` cliente `must_change=false`, cart guest transfer y sesión 30m (commits verificados) — **no cierran gates**; frescura fechada, puede cambiar.

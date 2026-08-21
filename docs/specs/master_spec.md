@@ -1,8 +1,9 @@
 # Master Spec — merkee.shop
 
 **Lifecycle status:** `validated-not-executed`  
-**Incremento activo:** `merkee-shop-foundation` · **Actualizado:** 2026-08-17  
-**Spec Validator:** `ready` — revisado el 2026-08-17 sobre el conjunto actual de artefactos; `invalidated_by_changes_since: none`.
+**Incremento activo:** `merkee-shop-foundation` · **Actualizado:** 2026-08-21  
+**Spec Validator:** `ready` — revisado el 2026-08-17 sobre el conjunto actual de artefactos; `invalidated_by_changes_since: 2026-08-18..2026-08-21 (requiere revalidación focalizada)`  
+**Nota de frescura 2026-08-21:** este documento es la fuente de verdad del sistema. Lo verificado postentrega (cart guest→cliente transfer, sesión 30m, media `images.merkee.shop` OAC) se documenta en `README.md` y `docs/DEPLOYMENT_STATUS.md` con commits verificados; no modifica esta spec salvo la sesión 30m ya consolidada en §Carrito (decisión aprobada 2026-08-21).
 
 ## Propósito, límites y fuentes canónicas
 
@@ -133,7 +134,7 @@ El puerto `IdempotencyPurgeMetricsPort` define exclusivamente: `idempotency_reco
 
 ## Carrito, checkout y pagos
 
-Mutación o lectura válida renueva sesión, carrito y reservas ACTIVE a `now()+10m`. Reaper cada 1 min toma hasta 500 filas, timeout transacción 5 s, 3 reintentos 1/5/15 s; transición condicional evita doble liberación. Fallo revierte transacción, alerta y deja reintento en siguiente ciclo. Métricas: `reservation_reaper_processed_total`, `reservation_active_total`, `reservation_expired_lag_seconds`; log sin PII `inventory.reservation_released`.
+Mutación o lectura válida renueva reservas ACTIVE/carrito a `now()+10m` (sin cambio); si la sesión es autenticada (admin/cliente), renueva la sesión a `now()+30m` —decisión aprobada por el usuario 2026-08-21 que corrige la descripción previa de 10 minutos para sesión autenticada y la diferencia de reservas ACTIVE/carrito 10 min—; la sesión de invitado mantiene 10m. JWT de acceso sigue ≤10 min y solo en memoria. Reaper cada 1 min toma hasta 500 filas, timeout transacción 5 s, 3 reintentos 1/5/15 s; transición condicional evita doble liberación. Fallo revierte transacción, alerta y deja reintento en siguiente ciclo. Métricas: `reservation_reaper_processed_total`, `reservation_active_total`, `reservation_expired_lag_seconds`; log sin PII `inventory.reservation_released`.
 
 Checkout cliente bloquea reservas, recalcula snapshots y convierte ACTIVE→CHECKOUT_PENDING. Webhook firmado sobre raw body y reconciliación cada 15 min son autoritativos. APPROVED consume hold equivalente en una transacción y decrementa físico/reservado; sin hold consumible no descuenta y crea un reembolso idempotente. Proveedores: timeout 10 s, 3 reintentos 0.5/2/8 s solo red/5xx; refunds 5 intentos 1m/5m/15m/1h/6h y luego alerta/DLQ/replay. Métricas `payment_webhook_processed_total`, `payment_refund_total`, `payment_reconciliation_total`.
 
